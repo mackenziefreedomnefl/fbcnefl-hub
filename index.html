@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FBCNEFL Operations</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a1f3c; min-height: 100vh; }
+
+    .hub { padding: 2rem 1.5rem; min-height: 100vh; }
+
+    .header { text-align: center; padding: 2.5rem 0 2rem; border-bottom: 0.5px solid rgba(255,255,255,0.12); margin-bottom: 2rem; }
+    .logo-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 0.5rem; }
+    .header h1 { font-size: 22px; font-weight: 500; color: #fff; letter-spacing: 0.5px; }
+    .header p { font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; max-width: 860px; margin: 0 auto; }
+
+    .card { background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 1.5rem 1.25rem; text-decoration: none; display: block; transition: background 0.15s, border-color 0.15s; }
+    .card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
+
+    .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .card-icon svg { width: 20px; height: 20px; }
+    .card h2 { font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 4px; }
+    .card p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+    .card-arrow { float: right; opacity: 0.35; font-size: 16px; color: #fff; }
+
+    .placeholder { border-style: dashed; opacity: 0.5; }
+
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-top: 10px; font-weight: 500; }
+    .badge-live { background: rgba(29,158,117,0.2); color: #5dcaa5; }
+    .badge-soon { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); }
+
+    .footer { text-align: center; margin-top: 3rem; font-size: 12px; color: rgba(255,255,255,0.2); padding-bottom: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="hub">
+    <div class="header">
+      <div class="logo-row">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="17" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <circle cx="18" cy="12" r="3" stroke="#5dcaa5" stroke-width="1.5"/>
+          <line x1="18" y1="15" x2="18" y2="27" stroke="#5dcaa5" stroke-width="1.5"/>
+          <path d="M11 21 Q18 27 25 21" stroke="#5dcaa5" stroke-width="1.5" fill="none"/>
+          <line x1="11" y1="15" x2="25" y2="15" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        </svg>
+        <h1>FBCNEFL Operations</h1>
+      </div>
+      <p>Affordable Boating of North Florida — internal tools</p>
+    </div>
+
+    <div class="grid">
+
+      <a class="card" href="https://expense.fbcnefl.com" target="_blank">
+        <span class="card-arrow">→</span>
+        <div class="card-icon" style="background: rgba(55,138,221,0.15);">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#378add" stroke-width="1.5">
+            <rect x="2" y="4" width="16" height="12" rx="2"/>
+            <line x1="2" y1="8" x2="18" y2="8"/>
+            <line x1="6" y1="12" x2="10" y2="12"/>
+          </svg>
+        </div>
+        <h2>Expense Dashboard</h2>
+        <p>Weekly expense reports, receipts, and mileage tracking</p>
+        <span class="badge badge-live">Live</span>
+      </a>
+
+      <a class="card" href="https://schedule.fbcnefl.com" target="_blank">
+        <span class="card-arrow">→</span>
+        <div class="card-icon" style="background: rgba(29,158,117,0.15);">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#1d9e75" stroke-width="1.5">
+            <rect x="3" y="4" width="14" height="13" rx="2"/>
+            <line x1="3" y1="8" x2="17" y2="8"/>
+            <line x1="7" y1="3" x2="7" y2="5"/>
+            <line x1="13" y1="3" x2="13" y2="5"/>
+            <rect x="7" y="11" width="3" height="3" rx="0.5" fill="#1d9e75"/>
+          </svg>
+        </div>
+        <h2>Schedule Tool</h2>
+        <p>Staff scheduling across all five club locations</p>
+        <span class="badge badge-live">Live</span>
+      </a>
+
+      <a class="card" href="https://ops.fbcnefl.com" target="_blank">
+        <span class="card-arrow">→</span>
+        <div class="card-icon" style="background: rgba(186,117,23,0.15);">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#ba7517" stroke-width="1.5">
+            <path d="M3 5h14M3 10h10M3 15h7"/>
+          </svg>
+        </div>
+        <h2>Daily Ops Digest</h2>
+        <p>Reservations, fleet, tides, and after-hours summary</p>
+        <span class="badge badge-soon">Coming soon</span>
+      </a>
+
+      <div class="card placeholder">
+        <div class="card-icon" style="background: rgba(255,255,255,0.05);">
+          <svg viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5">
+            <circle cx="10" cy="10" r="7"/>
+            <line x1="10" y1="7" x2="10" y2="13"/>
+            <line x1="7" y1="10" x2="13" y2="10"/>
+          </svg>
+        </div>
+        <h2 style="color: rgba(255,255,255,0.3);">Future tool</h2>
+        <p style="color: rgba(255,255,255,0.25);">Slot reserved for the next thing you build</p>
+        <span class="badge badge-soon">Placeholder</span>
+      </div>
+
+    </div>
+    <div class="footer">fbcnefl.com · Affordable Boating of North Florida LLC</div>
+  </div>
+</body>
+</html>
