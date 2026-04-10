@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fbc-hub",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["-c", "import http.server; import socketserver; handler = http.server.SimpleHTTPRequestHandler; httpd = socketserver.TCPServer(('', 8080), handler); httpd.serve_forever()"],
+      "port": 8080
+    }
+  ]
+}
