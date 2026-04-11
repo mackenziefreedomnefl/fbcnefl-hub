@@ -400,6 +400,184 @@
     }
     .schedule-frame .expand-link:hover { background: #f8f9fb; }
 
+    /* Push notification banner */
+    .notice-banner {
+      display: none;
+      margin-bottom: 1rem;
+    }
+    .notice-banner.active { display: block; }
+    .notice-inner {
+      background: #0b1c3d;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(11,28,61,0.25);
+      position: relative;
+    }
+    .notice-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: #3b9eff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .notice-icon svg { width: 18px; height: 18px; }
+    .notice-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .notice-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
+    }
+    .notice-text {
+      font-size: 14px;
+      color: #fff;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+    .notice-link {
+      display: inline-block;
+      background: #3b9eff;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .notice-link:hover { background: #2b8ae6; }
+    .notice-edit-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 6px;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      display: none;
+    }
+    .notice-edit-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    .notice-dismiss {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+    }
+    .notice-dismiss:hover { color: rgba(255,255,255,0.7); }
+    .admin-visible .notice-dismiss { right: 50px; }
+    .admin-visible .notice-edit-btn { display: block; }
+
+    /* Notice edit modal */
+    .notice-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11,28,61,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .notice-modal.open { display: flex; }
+    .notice-modal .modal {
+      width: 420px;
+    }
+    .notice-modal textarea {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1.5px solid #e2e5ec;
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 70px;
+      transition: border-color 0.15s;
+    }
+    .notice-modal textarea:focus,
+    .notice-modal input:focus { border-color: #3b9eff; }
+    .notice-modal .form-row {
+      display: flex;
+      gap: 8px;
+    }
+    .notice-modal .form-row .form-field { flex: 1; }
+    .notice-modal .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+    .notice-modal .btn-row button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .notice-modal .btn-save {
+      background: #0b1c3d;
+      color: #fff;
+    }
+    .notice-modal .btn-save:hover { background: #142d54; }
+    .notice-modal .btn-deactivate {
+      background: #fff0f0;
+      color: #d14;
+    }
+    .notice-modal .btn-deactivate:hover { background: #ffe0e0; }
+    .notice-modal .btn-cancel {
+      background: #f0f1f5;
+      color: #6b7a94;
+    }
+    .notice-modal .token-setup {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e5ec;
+    }
+    .notice-modal .token-setup summary {
+      font-size: 12px;
+      color: #6b7a94;
+      cursor: pointer;
+    }
+    .notice-modal .token-setup input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      border: 1.5px solid #e2e5ec;
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+    }
+    .notice-status {
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .notice-status.success { color: #1a9e6d; }
+    .notice-status.error { color: #d14; }
+
     /* Footer */
     .footer {
       text-align: center;
@@ -488,6 +666,58 @@
     <div class="logo-section">
       <div class="logo">
         <img src="public/FBCLogoCMYK.png" alt="Freedom Boat Club" />
+      </div>
+    </div>
+
+    <!-- Push Notification Banner -->
+    <div class="notice-banner" id="noticeBanner">
+      <div class="notice-inner">
+        <div class="notice-icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.5">
+            <path d="M10 2a5 5 0 0 0-5 5v4l-2 2v1h14v-1l-2-2V7a5 5 0 0 0-5-5z"/>
+            <path d="M8 16a2 2 0 0 0 4 0"/>
+          </svg>
+        </div>
+        <div class="notice-content">
+          <div class="notice-label">FBC NEFL</div>
+          <div class="notice-text" id="noticeText"></div>
+          <a class="notice-link" id="noticeLink" href="#" target="_blank"></a>
+        </div>
+        <button class="notice-dismiss" onclick="dismissNotice()">&times;</button>
+        <button class="notice-edit-btn" onclick="openNoticeEditor()">Edit</button>
+      </div>
+    </div>
+
+    <!-- Notice Edit Modal -->
+    <div class="notice-modal" id="noticeModal">
+      <div class="modal">
+        <h2>Edit Notice</h2>
+        <p>This message shows as a push notification at the top of the hub</p>
+        <div class="form-field">
+          <label>Message</label>
+          <textarea id="noticeEditText" placeholder="e.g. Staff event April 29th at Chipshot!"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Link URL (optional)</label>
+            <input type="url" id="noticeEditLink" placeholder="https://..." />
+          </div>
+          <div class="form-field">
+            <label>Button Text</label>
+            <input type="text" id="noticeEditLinkText" placeholder="e.g. RSVP Now" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-save" onclick="saveNotice(true)">Save &amp; Publish</button>
+          <button class="btn-deactivate" onclick="saveNotice(false)">Hide Notice</button>
+        </div>
+        <button class="pin-cancel" onclick="closeNoticeEditor()" style="margin-top:0.5rem;">Cancel</button>
+        <details class="token-setup">
+          <summary>GitHub Token (needed to save changes)</summary>
+          <input type="password" id="ghTokenInput" placeholder="ghp_..." oninput="localStorage.setItem('ghToken',this.value)" />
+          <p style="font-size:11px;color:#8a94a6;margin-top:4px;">Create a fine-grained token at github.com with repo contents write access</p>
+        </details>
+        <div class="notice-status" id="noticeStatus"></div>
       </div>
     </div>
 
@@ -867,6 +1097,7 @@
       document.getElementById('adminSection').classList.add('visible');
       document.getElementById('navLoginBtn').style.display = 'none';
       document.getElementById('navLogoutBtn').style.display = '';
+      document.getElementById('noticeBanner').classList.add('admin-visible');
     }
 
     function logout() {
@@ -875,7 +1106,117 @@
       document.getElementById('adminSection').classList.remove('visible');
       document.getElementById('navLoginBtn').style.display = '';
       document.getElementById('navLogoutBtn').style.display = 'none';
+      document.getElementById('noticeBanner').classList.remove('admin-visible');
     }
+
+    // --- Notice / Push Notification ---
+    let currentNotice = {};
+    const REPO = 'mackenziefreedomnefl/fbcnefl-hub';
+    const NOTICE_PATH = 'notice.json';
+
+    function loadNotice() {
+      fetch(NOTICE_PATH + '?t=' + Date.now())
+        .then(r => r.json())
+        .then(data => {
+          currentNotice = data;
+          renderNotice(data);
+        })
+        .catch(() => {});
+    }
+
+    function renderNotice(data) {
+      const banner = document.getElementById('noticeBanner');
+      const textEl = document.getElementById('noticeText');
+      const linkEl = document.getElementById('noticeLink');
+      if (data.active && data.text) {
+        textEl.textContent = data.text;
+        if (data.link) {
+          linkEl.href = data.link;
+          linkEl.textContent = data.linkText || 'Learn More';
+          linkEl.style.display = '';
+        } else {
+          linkEl.style.display = 'none';
+        }
+        banner.classList.add('active');
+      } else {
+        banner.classList.remove('active');
+      }
+    }
+
+    function dismissNotice() {
+      document.getElementById('noticeBanner').classList.remove('active');
+    }
+
+    function openNoticeEditor() {
+      document.getElementById('noticeEditText').value = currentNotice.text || '';
+      document.getElementById('noticeEditLink').value = currentNotice.link || '';
+      document.getElementById('noticeEditLinkText').value = currentNotice.linkText || '';
+      document.getElementById('ghTokenInput').value = localStorage.getItem('ghToken') || '';
+      document.getElementById('noticeStatus').textContent = '';
+      document.getElementById('noticeModal').classList.add('open');
+    }
+
+    function closeNoticeEditor() {
+      document.getElementById('noticeModal').classList.remove('open');
+    }
+
+    async function saveNotice(active) {
+      const token = localStorage.getItem('ghToken');
+      if (!token) {
+        document.getElementById('noticeStatus').textContent = 'Enter a GitHub token first (expand below)';
+        document.getElementById('noticeStatus').className = 'notice-status error';
+        return;
+      }
+      const notice = {
+        text: document.getElementById('noticeEditText').value.trim(),
+        link: document.getElementById('noticeEditLink').value.trim(),
+        linkText: document.getElementById('noticeEditLinkText').value.trim() || 'Learn More',
+        active: active
+      };
+      const statusEl = document.getElementById('noticeStatus');
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'notice-status';
+      try {
+        // Get current file SHA
+        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const fileData = await fileRes.json();
+        // Update file
+        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: active ? 'Update notice: ' + notice.text.substring(0, 50) : 'Hide notice',
+            content: btoa(JSON.stringify(notice, null, 2) + '\n'),
+            sha: fileData.sha
+          })
+        });
+        if (updateRes.ok) {
+          currentNotice = notice;
+          renderNotice(notice);
+          statusEl.textContent = 'Saved! Changes go live in ~1 min.';
+          statusEl.className = 'notice-status success';
+          setTimeout(() => closeNoticeEditor(), 1500);
+        } else {
+          const err = await updateRes.json();
+          statusEl.textContent = 'Error: ' + (err.message || 'Failed to save');
+          statusEl.className = 'notice-status error';
+        }
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        statusEl.className = 'notice-status error';
+      }
+    }
+
+    document.getElementById('noticeModal').addEventListener('click', function(e) {
+      if (e.target === this) closeNoticeEditor();
+    });
+
+    loadNotice();
 
     // Enter key submits login
     document.getElementById('passInput').addEventListener('keydown', function(e) {
