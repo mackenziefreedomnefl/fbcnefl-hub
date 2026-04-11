@@ -81,7 +81,7 @@
 
     /* Main content */
     .main {
-      max-width: 680px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 2rem 1rem 3rem;
     }
@@ -386,7 +386,7 @@
     .schedule-widget.open .schedule-frame { display: block; }
     .schedule-frame iframe {
       width: 100%;
-      height: 500px;
+      height: 700px;
       border: none;
     }
     .schedule-frame .expand-link {
@@ -492,7 +492,7 @@
     </div>
 
     <!-- Schedule Widget -->
-    <div class="schedule-widget" id="scheduleWidget">
+    <div class="schedule-widget open" id="scheduleWidget">
       <div class="schedule-header" onclick="document.getElementById('scheduleWidget').classList.toggle('open')">
         <div class="schedule-header-left">
           <div class="card-icon">
@@ -506,7 +506,7 @@
           </div>
           <div>
             <h3>Weekly Schedule</h3>
-            <p>Tap to view this week's staff schedule</p>
+            <p>Tap header to collapse</p>
           </div>
         </div>
         <span class="schedule-toggle">&#9662;</span>
@@ -613,7 +613,7 @@
         </div>
         <div class="card-body">
           <h3>Towing</h3>
-          <p>Towing requests and tracking</p>
+          <p>Contact: Rob (California time). Have lat/long, # on board, and member contact number ready.</p>
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
