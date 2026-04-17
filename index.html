@@ -764,6 +764,59 @@
     .card-status.error { color: #d14; }
     .custom-cards-section { margin-top: 0.5rem; }
 
+    /* Small Craft Advisory Banner */
+    .sca-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      margin-bottom: 1.25rem;
+      text-decoration: none;
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .sca-banner:active { transform: scale(0.985); }
+    .sca-banner.sca-clear {
+      background: #e6f7ef;
+      border: 1.5px solid #b8e6d0;
+      color: #1a9e6d;
+    }
+    .sca-banner.sca-warning {
+      background: #fff4e5;
+      border: 1.5px solid #ffd699;
+      color: #b5651d;
+    }
+    .sca-banner.sca-advisory {
+      background: #fff0f0;
+      border: 1.5px solid #ffb3b3;
+      color: #d14;
+    }
+    .sca-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .sca-icon svg { width: 24px; height: 24px; }
+    .sca-content { flex: 1; }
+    .sca-label {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .sca-detail {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    .sca-arrow {
+      font-size: 22px;
+      font-weight: 300;
+      opacity: 0.5;
+    }
+
     /* Footer */
     .footer {
       text-align: center;
@@ -933,6 +986,22 @@
 
     <!-- HOME TAB -->
     <div class="tab-panel active" id="tab-home">
+
+    <!-- Small Craft Advisory Banner -->
+    <a href="https://www.ndbc.noaa.gov/data/Forecasts/FZUS52.KJAX.html" target="_blank" id="scaBanner" class="sca-banner" style="display:none;">
+      <div class="sca-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+          <path d="M12 2L2 22h20L12 2z" stroke="currentColor" fill="none"/>
+          <line x1="12" y1="9" x2="12" y2="15" stroke="currentColor"/>
+          <circle cx="12" cy="18" r="0.8" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="sca-content">
+        <div class="sca-label" id="scaLabel">Checking NOAA advisories...</div>
+        <div class="sca-detail" id="scaDetail">Loading coastal forecast</div>
+      </div>
+      <span class="sca-arrow">&rsaquo;</span>
+    </a>
 
     <!-- Daily Forms (visible to all dock staff) -->
     <h2 class="section-title">Daily Forms</h2>
@@ -1787,6 +1856,42 @@
     });
 
     loadCustomCards();
+
+    // --- Small Craft Advisory Check ---
+    function checkSCA() {
+      const banner = document.getElementById('scaBanner');
+      // Use NOAA marine forecast API for Jacksonville area
+      fetch('https://api.weather.gov/alerts/active?zone=AMZ555,AMZ572,ANZ555')
+        .then(r => r.json())
+        .then(data => {
+          const alerts = data.features || [];
+          const marine = alerts.filter(a => {
+            const evt = (a.properties.event || '').toLowerCase();
+            return evt.includes('small craft') || evt.includes('gale') || evt.includes('storm warning') || evt.includes('hazardous seas') || evt.includes('marine') || evt.includes('rip current');
+          });
+          if (marine.length > 0) {
+            const top = marine[0].properties;
+            const isAdvisory = (top.event || '').toLowerCase().includes('small craft') || (top.event || '').toLowerCase().includes('advisory');
+            banner.className = 'sca-banner ' + (isAdvisory ? 'sca-advisory' : 'sca-warning');
+            document.getElementById('scaLabel').textContent = top.event || 'Marine Advisory Active';
+            const headline = top.headline || top.description || '';
+            document.getElementById('scaDetail').textContent = headline.length > 90 ? headline.substring(0, 90) + '...' : headline;
+          } else {
+            banner.className = 'sca-banner sca-clear';
+            document.getElementById('scaLabel').textContent = 'No Active Marine Advisories';
+            document.getElementById('scaDetail').textContent = 'Tap to view full NOAA coastal forecast';
+          }
+          banner.style.display = 'flex';
+        })
+        .catch(() => {
+          // If API fails, show a static link
+          banner.className = 'sca-banner sca-clear';
+          document.getElementById('scaLabel').textContent = 'NOAA Small Craft Advisory';
+          document.getElementById('scaDetail').textContent = 'Tap to check current marine forecast';
+          banner.style.display = 'flex';
+        });
+    }
+    checkSCA();
 
     // Restore session if already logged in
     if (sessionStorage.getItem('fbcAdmin') === '1') {
