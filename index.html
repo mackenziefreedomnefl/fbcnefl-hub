@@ -391,10 +391,39 @@
     }
     .schedule-table tr:last-child td { border-bottom: none; }
     .schedule-table tr:hover td { background: #f8f9fb; }
-    .shift-east { color: #0b1c3d; font-weight: 500; }
-    .shift-west { color: #3b9eff; font-weight: 500; }
-    .shift-beach { color: #1a9e6d; font-weight: 500; }
-    .shift-off { color: #d14; font-size: 11px; }
+    .shift-east {
+      color: #0b1c3d;
+      font-weight: 600;
+      background: #f0f1f5;
+      border-radius: 4px;
+      padding: 2px 6px;
+      display: inline-block;
+    }
+    .shift-west {
+      color: #1b66c9;
+      font-weight: 600;
+      background: #e8f0fe;
+      border-radius: 4px;
+      padding: 2px 6px;
+      display: inline-block;
+    }
+    .shift-beach {
+      color: #1a9e6d;
+      font-weight: 600;
+      background: #e6f7ef;
+      border-radius: 4px;
+      padding: 2px 6px;
+      display: inline-block;
+    }
+    .shift-off {
+      color: #d14;
+      font-weight: 600;
+      background: #fff0f0;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      display: inline-block;
+    }
     .shift-empty { color: #d0d3da; }
     .schedule-week-nav {
       display: flex;
@@ -434,6 +463,19 @@
       color: #6b7a94;
       font-size: 14px;
     }
+    .schedule-search {
+      width: 100%;
+      padding: 10px 14px 10px 36px;
+      font-size: 14px;
+      border: 1px solid #e2e5ec;
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 10px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7a94' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='16' y1='16' x2='22' y2='22'/%3E%3C/svg%3E") 12px center no-repeat;
+    }
+    .schedule-search:focus { border-color: #3b9eff; }
+    .schedule-table tr.hidden { display: none; }
 
     /* Push notification banner */
     .notice-banner {
@@ -857,6 +899,7 @@
         <span id="weekLabel">Loading...</span>
         <button id="nextWeekBtn" onclick="changeWeek(1)">Next &rarr;</button>
       </div>
+      <input type="text" class="schedule-search" id="scheduleSearch" placeholder="Search employee name..." oninput="filterSchedule(this.value)" />
       <div id="scheduleContainer">
         <div class="schedule-loading">Loading schedule...</div>
       </div>
@@ -1326,14 +1369,16 @@
           // Group employees by team
           const teams = {};
           data.employees.forEach(emp => {
-            if (!teams[emp.team]) teams[emp.team] = [];
-            teams[emp.team].push(emp);
+            const team = emp.team || club.name || 'St. Augustine';
+            if (!teams[team]) teams[team] = [];
+            teams[team].push(emp);
           });
 
           for (const [teamName, employees] of Object.entries(teams)) {
+            const displayName = (!teamName || teamName === 'null') ? club.name : teamName;
             html += '<div class="schedule-location">';
             html += '<div class="schedule-location-header">';
-            html += '<span>' + teamName + '</span>';
+            html += '<span>' + displayName + '</span>';
             html += '<span class="week-label">' + formatWeekLabel(monday) + '</span>';
             html += '</div>';
             html += '<table class="schedule-table"><thead><tr><th>Employee</th>';
@@ -1342,7 +1387,7 @@
             }
             html += '</tr></thead><tbody>';
             employees.forEach(emp => {
-              html += '<tr><td>' + emp.name + '</td>';
+              html += '<tr data-name="' + emp.name.toLowerCase() + '"><td>' + emp.name + '</td>';
               for (let i = 0; i < 7; i++) {
                 const shift = (data.shifts[emp.id] && data.shifts[emp.id][i]) || '';
                 const cls = classifyShift(shift);
@@ -1357,6 +1402,14 @@
       } catch (e) {
         document.getElementById('scheduleContainer').innerHTML = '<div class="schedule-loading">Unable to load schedule. <a href="https://schedule.fbcnefl.com/?view=staff" target="_blank">View here</a></div>';
       }
+    }
+
+    function filterSchedule(query) {
+      const q = query.toLowerCase().trim();
+      document.querySelectorAll('.schedule-table tbody tr').forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        row.classList.toggle('hidden', q && !name.includes(q));
+      });
     }
 
     function changeWeek(dir) {
