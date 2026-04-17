@@ -326,79 +326,111 @@
       display: none;
     }
 
-    /* Schedule widget */
-    .schedule-widget {
+    /* Schedule tables */
+    .schedule-section {
+      margin-bottom: 1.5rem;
+    }
+    .schedule-location {
       background: #fff;
       border: 1px solid #e2e5ec;
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 1rem;
+      margin-bottom: 10px;
     }
-    .schedule-header {
+    .schedule-location-header {
+      background: #0b1c3d;
+      color: #fff;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.85rem 1.25rem;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.15s;
     }
-    .schedule-header:hover { background: #f8f9fb; }
-    .schedule-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .schedule-location-header .week-label {
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.6);
     }
-    .schedule-header-left .card-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 9px;
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .schedule-table th {
+      background: #f5f6fa;
+      color: #6b7a94;
+      font-weight: 600;
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid #e2e5ec;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .schedule-table th:first-child {
+      text-align: left;
+      padding-left: 14px;
+      min-width: 130px;
+    }
+    .schedule-table td {
+      padding: 7px 6px;
+      text-align: center;
+      border-bottom: 1px solid #f0f1f5;
+      color: #0b1c3d;
+      font-size: 12px;
+    }
+    .schedule-table td:first-child {
+      text-align: left;
+      padding-left: 14px;
+      font-weight: 500;
+      color: #0b1c3d;
+    }
+    .schedule-table tr:last-child td { border-bottom: none; }
+    .schedule-table tr:hover td { background: #f8f9fb; }
+    .shift-east { color: #0b1c3d; font-weight: 500; }
+    .shift-west { color: #3b9eff; font-weight: 500; }
+    .shift-beach { color: #1a9e6d; font-weight: 500; }
+    .shift-off { color: #d14; font-size: 11px; }
+    .shift-empty { color: #d0d3da; }
+    .schedule-week-nav {
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      background: #e6f7ef;
+      gap: 12px;
+      margin-bottom: 10px;
     }
-    .schedule-header-left .card-icon svg { width: 20px; height: 20px; }
-    .schedule-header-left h3 {
-      font-size: 15px;
+    .schedule-week-nav button {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0b1c3d;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .schedule-week-nav button:hover {
+      border-color: #3b9eff;
+      background: #e8f0fe;
+    }
+    .schedule-week-nav button.active {
+      background: #0b1c3d;
+      color: #fff;
+      border-color: #0b1c3d;
+    }
+    .schedule-week-nav span {
+      font-size: 14px;
       font-weight: 600;
       color: #0b1c3d;
     }
-    .schedule-header-left p {
-      font-size: 12px;
-      color: #6b7a94;
-      margin-top: 1px;
-    }
-    .schedule-toggle {
-      font-size: 20px;
-      color: #b8c1d0;
-      transition: transform 0.25s, color 0.15s;
-    }
-    .schedule-widget.open .schedule-toggle {
-      transform: rotate(180deg);
-      color: #3b9eff;
-    }
-    .schedule-frame {
-      display: none;
-      border-top: 1px solid #e2e5ec;
-    }
-    .schedule-widget.open .schedule-frame { display: block; }
-    .schedule-frame iframe {
-      width: 100%;
-      height: 1500px;
-      border: none;
-    }
-    .schedule-frame .expand-link {
-      display: block;
+    .schedule-loading {
       text-align: center;
-      padding: 8px;
-      font-size: 13px;
-      color: #3b9eff;
-      text-decoration: none;
-      border-top: 1px solid #e2e5ec;
+      padding: 2rem;
+      color: #6b7a94;
+      font-size: 14px;
     }
-    .schedule-frame .expand-link:hover { background: #f8f9fb; }
 
     /* Push notification banner */
     .notice-banner {
@@ -721,29 +753,16 @@
       </div>
     </div>
 
-    <!-- Schedule Widget -->
-    <div class="schedule-widget open" id="scheduleWidget">
-      <div class="schedule-header" onclick="document.getElementById('scheduleWidget').classList.toggle('open')">
-        <div class="schedule-header-left">
-          <div class="card-icon">
-            <svg viewBox="0 0 22 22" fill="none" stroke="#1a9e6d" stroke-width="1.5">
-              <rect x="3" y="4" width="16" height="15" rx="2.5"/>
-              <line x1="3" y1="9" x2="19" y2="9"/>
-              <line x1="7" y1="3" x2="7" y2="5.5"/>
-              <line x1="15" y1="3" x2="15" y2="5.5"/>
-              <rect x="8" y="12" width="3" height="3" rx="0.5" fill="#1a9e6d"/>
-            </svg>
-          </div>
-          <div>
-            <h3>Weekly Schedule</h3>
-            <p>Tap header to collapse</p>
-          </div>
-        </div>
-        <span class="schedule-toggle">&#9662;</span>
+    <!-- Schedule -->
+    <h2 class="section-title">Weekly Schedule</h2>
+    <div class="schedule-section" id="scheduleSection">
+      <div class="schedule-week-nav">
+        <button id="prevWeekBtn" onclick="changeWeek(-1)">&larr; Prev</button>
+        <span id="weekLabel">Loading...</span>
+        <button id="nextWeekBtn" onclick="changeWeek(1)">Next &rarr;</button>
       </div>
-      <div class="schedule-frame">
-        <iframe src="https://schedule.fbcnefl.com/?view=staff" loading="lazy"></iframe>
-        <a class="expand-link" href="https://schedule.fbcnefl.com/?view=staff" target="_blank">Open full schedule &rarr;</a>
+      <div id="scheduleContainer">
+        <div class="schedule-loading">Loading schedule...</div>
       </div>
     </div>
 
@@ -1232,6 +1251,100 @@
     });
 
     loadNotice();
+
+    // --- Schedule ---
+    const SCHEDULE_API = 'https://schedule.fbcnefl.com/api';
+    const DAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+    let currentWeekOffset = 0;
+
+    function getMonday(offset) {
+      const d = new Date();
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+      const mon = new Date(d.setDate(diff));
+      return mon.toISOString().split('T')[0];
+    }
+
+    function formatWeekLabel(monday) {
+      const d = new Date(monday + 'T00:00:00');
+      const end = new Date(d);
+      end.setDate(end.getDate() + 6);
+      const opts = { month: 'short', day: 'numeric' };
+      return d.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
+    }
+
+    function formatDayHeader(monday, dayIdx) {
+      const d = new Date(monday + 'T00:00:00');
+      d.setDate(d.getDate() + dayIdx);
+      return DAYS[dayIdx] + ' ' + (d.getMonth()+1) + '/' + d.getDate();
+    }
+
+    function classifyShift(val) {
+      if (!val) return 'shift-empty';
+      const v = val.toLowerCase();
+      if (v.includes('req off') || v.includes('off')) return 'shift-off';
+      if (v.includes('east')) return 'shift-east';
+      if (v.includes('west')) return 'shift-west';
+      if (v.includes('beach')) return 'shift-beach';
+      return 'shift-east';
+    }
+
+    async function loadSchedule() {
+      const monday = getMonday(currentWeekOffset);
+      document.getElementById('weekLabel').textContent = formatWeekLabel(monday);
+      document.getElementById('scheduleContainer').innerHTML = '<div class="schedule-loading">Loading schedule...</div>';
+
+      try {
+        const clubsRes = await fetch(SCHEDULE_API + '/clubs');
+        const clubs = await clubsRes.json();
+
+        let html = '';
+        for (const club of clubs) {
+          const schedRes = await fetch(SCHEDULE_API + '/clubs/' + club.id + '/schedule?week=' + monday);
+          const data = await schedRes.json();
+
+          // Group employees by team
+          const teams = {};
+          data.employees.forEach(emp => {
+            if (!teams[emp.team]) teams[emp.team] = [];
+            teams[emp.team].push(emp);
+          });
+
+          for (const [teamName, employees] of Object.entries(teams)) {
+            html += '<div class="schedule-location">';
+            html += '<div class="schedule-location-header">';
+            html += '<span>' + teamName + '</span>';
+            html += '<span class="week-label">' + formatWeekLabel(monday) + '</span>';
+            html += '</div>';
+            html += '<table class="schedule-table"><thead><tr><th>Employee</th>';
+            for (let i = 0; i < 7; i++) {
+              html += '<th>' + formatDayHeader(monday, i) + '</th>';
+            }
+            html += '</tr></thead><tbody>';
+            employees.forEach(emp => {
+              html += '<tr><td>' + emp.name + '</td>';
+              for (let i = 0; i < 7; i++) {
+                const shift = (data.shifts[emp.id] && data.shifts[emp.id][i]) || '';
+                const cls = classifyShift(shift);
+                html += '<td class="' + cls + '">' + (shift || '—') + '</td>';
+              }
+              html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+          }
+        }
+        document.getElementById('scheduleContainer').innerHTML = html || '<div class="schedule-loading">No schedule data found.</div>';
+      } catch (e) {
+        document.getElementById('scheduleContainer').innerHTML = '<div class="schedule-loading">Unable to load schedule. <a href="https://schedule.fbcnefl.com/?view=staff" target="_blank">View here</a></div>';
+      }
+    }
+
+    function changeWeek(dir) {
+      currentWeekOffset += dir;
+      loadSchedule();
+    }
+
+    loadSchedule();
 
     // Enter key submits login
     document.getElementById('passInput').addEventListener('keydown', function(e) {
