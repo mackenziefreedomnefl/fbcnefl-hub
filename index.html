@@ -671,31 +671,13 @@
     </button>
     <div class="nav-links">
       <button class="tab-btn active" onclick="switchTab('home', this)">Home</button>
+      <button class="tab-btn" onclick="switchTab('schedule', this)">Schedule</button>
       <button class="tab-btn" onclick="switchTab('spots', this)">Spot Tracker</button>
       <button class="tab-btn" onclick="switchTab('resources', this)">Resources</button>
-      <button id="navLoginBtn" class="nav-login-btn" onclick="openLogin()">Admin Login</button>
-      <button id="navLogoutBtn" class="nav-logout-btn" style="display:none;" onclick="logout()">Logout</button>
+      <button class="tab-btn" onclick="switchTab('admin', this)">Admin</button>
     </div>
   </nav>
 
-  <!-- Login Modal -->
-  <div class="modal-overlay" id="loginModal">
-    <div class="modal">
-      <h2>Admin Access</h2>
-      <p>Enter the admin PIN to access management tools</p>
-      <div class="form-field">
-        <label>Email</label>
-        <input type="email" id="emailInput" placeholder="you@fbcnefl.com" />
-      </div>
-      <div class="form-field">
-        <label>Password</label>
-        <input type="password" id="passInput" placeholder="Enter password" />
-      </div>
-      <div class="error-msg" id="loginError">Invalid email or password.</div>
-      <button class="pin-submit" onclick="submitLogin()">Log In</button>
-      <button class="pin-cancel" onclick="closeLogin()">Cancel</button>
-    </div>
-  </div>
 
   <div class="main">
 
@@ -760,19 +742,6 @@
 
     <!-- HOME TAB -->
     <div class="tab-panel active" id="tab-home">
-
-    <!-- Schedule -->
-    <h2 class="section-title">Weekly Schedule</h2>
-    <div class="schedule-section" id="scheduleSection">
-      <div class="schedule-week-nav">
-        <button id="prevWeekBtn" onclick="changeWeek(-1)">&larr; Prev</button>
-        <span id="weekLabel">Loading...</span>
-        <button id="nextWeekBtn" onclick="changeWeek(1)">Next &rarr;</button>
-      </div>
-      <div id="scheduleContainer">
-        <div class="schedule-loading">Loading schedule...</div>
-      </div>
-    </div>
 
     <!-- Daily Forms (visible to all dock staff) -->
     <h2 class="section-title">Daily Forms</h2>
@@ -878,6 +847,21 @@
     </div>
 
     </div><!-- end tab-home -->
+
+    <!-- SCHEDULE TAB -->
+    <div class="tab-panel" id="tab-schedule">
+    <h2 class="section-title">Weekly Schedule</h2>
+    <div class="schedule-section" id="scheduleSection">
+      <div class="schedule-week-nav">
+        <button id="prevWeekBtn" onclick="changeWeek(-1)">&larr; Prev</button>
+        <span id="weekLabel">Loading...</span>
+        <button id="nextWeekBtn" onclick="changeWeek(1)">Next &rarr;</button>
+      </div>
+      <div id="scheduleContainer">
+        <div class="schedule-loading">Loading schedule...</div>
+      </div>
+    </div>
+    </div><!-- end tab-schedule -->
 
     <!-- SPOTS TAB -->
     <div class="tab-panel" id="tab-spots">
@@ -1048,11 +1032,33 @@
 
     </div><!-- end tab-resources -->
 
-    <!-- ADMIN SECTION (hidden until login) -->
-    <div class="admin-section" id="adminSection">
+    <!-- ADMIN TAB -->
+    <div class="tab-panel" id="tab-admin">
+
+    <div id="adminLoginPrompt">
+      <div style="text-align:center; padding: 2rem 0;">
+        <h2 class="section-title" style="text-align:center;">Admin Access</h2>
+        <p style="color:#6b7a94; margin-bottom:1rem;">Sign in to access admin tools</p>
+        <div style="max-width:320px; margin:0 auto;">
+          <div class="form-field" style="text-align:left; margin-bottom:0.75rem;">
+            <label style="display:block;font-size:12px;font-weight:600;color:#6b7a94;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Email</label>
+            <input type="email" id="adminEmailInput" placeholder="you@freedomboatclub.com" style="width:100%;padding:10px 14px;font-size:15px;border:1.5px solid #e2e5ec;border-radius:8px;outline:none;font-family:inherit;" />
+          </div>
+          <div class="form-field" style="text-align:left; margin-bottom:0.75rem;">
+            <label style="display:block;font-size:12px;font-weight:600;color:#6b7a94;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Password</label>
+            <input type="password" id="adminPassInput" placeholder="Enter password" style="width:100%;padding:10px 14px;font-size:15px;border:1.5px solid #e2e5ec;border-radius:8px;outline:none;font-family:inherit;" />
+          </div>
+          <div id="adminLoginError" style="color:#d14;font-size:13px;margin-bottom:8px;display:none;">Invalid email or password.</div>
+          <button onclick="submitAdminLogin()" style="width:100%;padding:12px;background:#0b1c3d;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">Log In</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminTools" style="display:none;">
       <h2 class="section-title">
         Admin Tools
         <span class="badge badge-admin">Logged In</span>
+        <button onclick="adminLogout()" style="margin-left:auto;background:none;border:none;color:#d14;font-size:13px;cursor:pointer;font-weight:500;">Logout</button>
       </h2>
       <div class="card-list">
 
@@ -1104,6 +1110,8 @@
       </div>
     </div>
 
+    </div><!-- end tab-admin -->
+
     <div class="footer">fbcnefl.com &middot; Affordable Boating of North Florida LLC</div>
   </div>
 
@@ -1114,52 +1122,35 @@
       // Add more: 'user@fbcnefl.com': 'theirpassword',
     };
 
-    function openLogin() {
-      document.getElementById('loginModal').classList.add('open');
-      document.getElementById('emailInput').value = '';
-      document.getElementById('passInput').value = '';
-      document.getElementById('loginError').style.display = 'none';
-      document.querySelectorAll('.form-field input').forEach(i => i.classList.remove('error'));
-      setTimeout(() => document.getElementById('emailInput').focus(), 100);
-    }
-
-    function closeLogin() {
-      document.getElementById('loginModal').classList.remove('open');
-    }
-
-    function submitLogin() {
-      const email = document.getElementById('emailInput').value.trim().toLowerCase();
-      const pass = document.getElementById('passInput').value;
+    function submitAdminLogin() {
+      const email = document.getElementById('adminEmailInput').value.trim().toLowerCase();
+      const pass = document.getElementById('adminPassInput').value;
       if (ADMIN_ACCOUNTS[email] && ADMIN_ACCOUNTS[email] === pass) {
         sessionStorage.setItem('fbcAdmin', '1');
         sessionStorage.setItem('fbcAdminEmail', email);
-        closeLogin();
-        showAdmin();
+        showAdminTools();
       } else {
-        document.querySelectorAll('.form-field input').forEach(i => i.classList.add('error'));
-        document.getElementById('loginError').style.display = 'block';
-        document.getElementById('passInput').value = '';
-        document.getElementById('passInput').focus();
-        setTimeout(() => {
-          document.querySelectorAll('.form-field input').forEach(i => i.classList.remove('error'));
-        }, 300);
+        document.getElementById('adminLoginError').style.display = 'block';
+        document.getElementById('adminPassInput').value = '';
+        document.getElementById('adminPassInput').focus();
       }
     }
 
-    function showAdmin() {
-      document.getElementById('adminSection').classList.add('visible');
-      document.getElementById('navLoginBtn').style.display = 'none';
-      document.getElementById('navLogoutBtn').style.display = '';
+    function showAdminTools() {
+      document.getElementById('adminLoginPrompt').style.display = 'none';
+      document.getElementById('adminTools').style.display = '';
       document.getElementById('noticeBanner').classList.add('admin-visible');
     }
 
-    function logout() {
+    function adminLogout() {
       sessionStorage.removeItem('fbcAdmin');
       sessionStorage.removeItem('fbcAdminEmail');
-      document.getElementById('adminSection').classList.remove('visible');
-      document.getElementById('navLoginBtn').style.display = '';
-      document.getElementById('navLogoutBtn').style.display = 'none';
+      document.getElementById('adminLoginPrompt').style.display = '';
+      document.getElementById('adminTools').style.display = 'none';
       document.getElementById('noticeBanner').classList.remove('admin-visible');
+      document.getElementById('adminEmailInput').value = '';
+      document.getElementById('adminPassInput').value = '';
+      document.getElementById('adminLoginError').style.display = 'none';
     }
 
     // --- Notice / Push Notification ---
@@ -1375,22 +1366,17 @@
 
     loadSchedule();
 
-    // Enter key submits login
-    document.getElementById('passInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') submitLogin();
+    // Enter key submits admin login
+    document.getElementById('adminPassInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') submitAdminLogin();
     });
-    document.getElementById('emailInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') document.getElementById('passInput').focus();
-    });
-
-    // Click outside modal to close
-    document.getElementById('loginModal').addEventListener('click', function(e) {
-      if (e.target === this) closeLogin();
+    document.getElementById('adminEmailInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('adminPassInput').focus();
     });
 
     // Restore session if already logged in
     if (sessionStorage.getItem('fbcAdmin') === '1') {
-      showAdmin();
+      showAdminTools();
     }
   </script>
 
