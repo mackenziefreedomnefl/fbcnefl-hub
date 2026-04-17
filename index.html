@@ -66,6 +66,35 @@
       color: #3b9eff;
     }
     .tab-btn { font-family: inherit; }
+    .nav-dropdown {
+      position: relative;
+    }
+    .nav-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(11,28,61,0.2);
+      min-width: 180px;
+      padding: 6px 0;
+      z-index: 150;
+      margin-top: 8px;
+    }
+    .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+    .nav-dropdown-menu a {
+      display: block;
+      padding: 10px 16px;
+      font-size: 14px;
+      color: #0b1c3d !important;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .nav-dropdown-menu a:hover {
+      background: #f5f6fa;
+      color: #3b9eff !important;
+    }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
     .nav-login-btn {
@@ -716,7 +745,13 @@
       <button class="tab-btn" onclick="switchTab('schedule', this)">Schedule</button>
       <button class="tab-btn" onclick="switchTab('spots', this)">Spot Tracker</button>
       <button class="tab-btn" onclick="switchTab('resources', this)">Resources</button>
-      <button class="tab-btn" onclick="switchTab('admin', this)">Admin</button>
+      <div class="nav-dropdown">
+        <button class="tab-btn" onclick="switchTab('admin', this)">Admin &#9662;</button>
+        <div class="nav-dropdown-menu">
+          <a href="#" onclick="event.preventDefault();switchTab('admin', document.querySelector('.nav-dropdown .tab-btn'));openNoticeEditor();">Create Notification</a>
+          <a href="#" onclick="event.preventDefault();switchTab('admin', document.querySelector('.nav-dropdown .tab-btn'));">Admin Tools</a>
+        </div>
+      </div>
     </div>
   </nav>
 
