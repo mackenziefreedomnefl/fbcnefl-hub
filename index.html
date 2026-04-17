@@ -62,9 +62,12 @@
       cursor: pointer;
     }
     .nav-links a:hover, .nav-links button:hover,
-    .nav-links a.active {
+    .nav-links a.active, .nav-links button.active {
       color: #3b9eff;
     }
+    .tab-btn { font-family: inherit; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     .nav-login-btn {
       background: rgba(59,158,255,0.15) !important;
       padding: 6px 16px !important;
@@ -667,7 +670,9 @@
       </svg>
     </button>
     <div class="nav-links">
-      <a href="#" class="active">Home</a>
+      <button class="tab-btn active" onclick="switchTab('home', this)">Home</button>
+      <button class="tab-btn" onclick="switchTab('spots', this)">Spot Tracker</button>
+      <button class="tab-btn" onclick="switchTab('resources', this)">Resources</button>
       <button id="navLoginBtn" class="nav-login-btn" onclick="openLogin()">Admin Login</button>
       <button id="navLogoutBtn" class="nav-logout-btn" style="display:none;" onclick="logout()">Logout</button>
     </div>
@@ -752,6 +757,9 @@
         <div class="notice-status" id="noticeStatus"></div>
       </div>
     </div>
+
+    <!-- HOME TAB -->
+    <div class="tab-panel active" id="tab-home">
 
     <!-- Schedule -->
     <h2 class="section-title">Weekly Schedule</h2>
@@ -869,6 +877,11 @@
 
     </div>
 
+    </div><!-- end tab-home -->
+
+    <!-- SPOTS TAB -->
+    <div class="tab-panel" id="tab-spots">
+
     <!-- GPS Devices -->
     <h2 class="section-title">GPS Devices</h2>
     <div class="card-list">
@@ -947,6 +960,10 @@
 
     </div>
 
+    </div><!-- end tab-spots -->
+
+    <!-- RESOURCES TAB -->
+    <div class="tab-panel" id="tab-resources">
 
     <!-- Resources (visible to all) -->
     <h2 class="section-title">Resources</h2>
@@ -1028,6 +1045,8 @@
       </a>
 
     </div>
+
+    </div><!-- end tab-resources -->
 
     <!-- ADMIN SECTION (hidden until login) -->
     <div class="admin-section" id="adminSection">
@@ -1249,6 +1268,16 @@
     document.getElementById('noticeModal').addEventListener('click', function(e) {
       if (e.target === this) closeNoticeEditor();
     });
+
+    // --- Tab navigation ---
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      // Close mobile nav
+      document.querySelector('.nav-links').classList.remove('open');
+    }
 
     loadNotice();
 
