@@ -684,6 +684,86 @@
     .notice-status.success { color: #1a9e6d; }
     .notice-status.error { color: #d14; }
 
+    /* Card Creator Modal */
+    .card-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11,28,61,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-modal.open { display: flex; }
+    .card-modal .modal {
+      width: 440px;
+    }
+    .card-modal textarea,
+    .card-modal input[type="text"],
+    .card-modal input[type="url"],
+    .card-modal select {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1.5px solid #e2e5ec;
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .card-modal textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .card-modal select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a94' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+      cursor: pointer;
+    }
+    .card-modal textarea:focus,
+    .card-modal input:focus,
+    .card-modal select:focus { border-color: #3b9eff; }
+    .card-modal .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+    .card-modal .btn-row button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .card-modal .btn-save {
+      background: #0b1c3d;
+      color: #fff;
+    }
+    .card-modal .btn-save:hover { background: #142d54; }
+    .card-modal .btn-cancel {
+      background: #f0f1f5;
+      color: #6b7a94;
+    }
+    .card-modal .btn-cancel:hover { background: #e2e5ec; }
+    .card-modal .btn-delete {
+      background: #fff0f0;
+      color: #d14;
+    }
+    .card-modal .btn-delete:hover { background: #ffe0e0; }
+    .card-status {
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .card-status.success { color: #1a9e6d; }
+    .card-status.error { color: #d14; }
+    .custom-cards-section { margin-top: 0.5rem; }
+
     /* Footer */
     .footer {
       text-align: center;
@@ -749,6 +829,7 @@
         <button class="tab-btn" onclick="switchTab('admin', this)">Admin &#9662;</button>
         <div class="nav-dropdown-menu">
           <a href="#" onclick="event.preventDefault();switchTab('admin', document.querySelector('.nav-dropdown .tab-btn'));openNoticeEditor();">Create Notification</a>
+          <a href="#" onclick="event.preventDefault();openCardCreator();">Create Card</a>
           <a href="#" onclick="event.preventDefault();switchTab('admin', document.querySelector('.nav-dropdown .tab-btn'));">Admin Tools</a>
         </div>
       </div>
@@ -814,6 +895,39 @@
           <p style="font-size:11px;color:#8a94a6;margin-top:4px;">Create a fine-grained token at github.com with repo contents write access</p>
         </details>
         <div class="notice-status" id="noticeStatus"></div>
+      </div>
+    </div>
+
+    <!-- Card Creator Modal -->
+    <div class="card-modal" id="cardModal">
+      <div class="modal">
+        <h2>Create Card</h2>
+        <p>Add a new card to any tab on the hub</p>
+        <div class="form-field">
+          <label>Which tab should it go on?</label>
+          <select id="cardTab">
+            <option value="home">Home</option>
+            <option value="spots">Spot Tracker</option>
+            <option value="resources" selected>Resources</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Heading</label>
+          <input type="text" id="cardHeading" placeholder="e.g. Safety Checklist" />
+        </div>
+        <div class="form-field">
+          <label>Body text</label>
+          <textarea id="cardBody" placeholder="e.g. Daily pre-departure safety inspection form"></textarea>
+        </div>
+        <div class="form-field">
+          <label>Link URL (optional)</label>
+          <input type="url" id="cardLink" placeholder="https://..." />
+        </div>
+        <div class="btn-row">
+          <button class="btn-save" onclick="saveCard()">Save Card</button>
+          <button class="btn-cancel" onclick="closeCardCreator()">Cancel</button>
+        </div>
+        <div class="card-status" id="cardStatus"></div>
       </div>
     </div>
 
@@ -923,6 +1037,7 @@
 
     </div>
 
+    <div id="customCards-home" class="custom-cards-section"></div>
     </div><!-- end tab-home -->
 
     <!-- SCHEDULE TAB -->
@@ -1022,6 +1137,7 @@
 
     </div>
 
+    <div id="customCards-spots" class="custom-cards-section"></div>
     </div><!-- end tab-spots -->
 
     <!-- RESOURCES TAB -->
@@ -1159,6 +1275,7 @@
 
     </div>
 
+    <div id="customCards-resources" class="custom-cards-section"></div>
     </div><!-- end tab-resources -->
 
     <!-- ADMIN TAB -->
@@ -1189,6 +1306,35 @@
         <span class="badge badge-admin">Logged In</span>
         <button onclick="adminLogout()" style="margin-left:auto;background:none;border:none;color:#d14;font-size:13px;cursor:pointer;font-weight:500;">Logout</button>
       </h2>
+      <div class="card-list">
+        <div class="card" onclick="openNoticeEditor()" style="cursor:pointer;">
+          <div class="card-icon" style="background: #fef3e2;">
+            <svg viewBox="0 0 22 22" fill="none" stroke="#c47f17" stroke-width="1.5">
+              <path d="M11 3a5 5 0 0 1 5 5c0 3.5 1.5 5 1.5 5H4.5S6 11.5 6 8a5 5 0 0 1 5-5z"/>
+              <path d="M9 17a2 2 0 0 0 4 0"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3>Create Notification</h3>
+            <p>Push a banner message to the top of the hub</p>
+          </div>
+          <span class="card-arrow">&rsaquo;</span>
+        </div>
+        <div class="card" onclick="openCardCreator()" style="cursor:pointer;">
+          <div class="card-icon" style="background: #e8f0fe;">
+            <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
+              <rect x="3" y="3" width="16" height="16" rx="3"/>
+              <line x1="11" y1="7" x2="11" y2="15"/>
+              <line x1="7" y1="11" x2="15" y2="11"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3>Create Card</h3>
+            <p>Add a new card to any tab on the hub</p>
+          </div>
+          <span class="card-arrow">&rsaquo;</span>
+        </div>
+      </div>
     </div>
 
     </div><!-- end tab-admin -->
@@ -1464,6 +1610,183 @@
     document.getElementById('adminEmailInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') document.getElementById('adminPassInput').focus();
     });
+
+    // --- Custom Cards ---
+    const CARDS_PATH = 'cards.json';
+    let customCards = [];
+
+    function loadCustomCards() {
+      fetch(CARDS_PATH + '?t=' + Date.now())
+        .then(r => r.json())
+        .then(cards => {
+          customCards = cards;
+          renderCustomCards();
+        })
+        .catch(() => {});
+    }
+
+    function renderCustomCards() {
+      // Clear all custom card containers
+      ['home', 'spots', 'resources'].forEach(tab => {
+        const container = document.getElementById('customCards-' + tab);
+        if (container) container.innerHTML = '';
+      });
+
+      // Group cards by tab
+      const grouped = {};
+      customCards.forEach((card, idx) => {
+        if (!grouped[card.tab]) grouped[card.tab] = [];
+        grouped[card.tab].push({ ...card, _index: idx });
+      });
+
+      // Render into each tab
+      for (const [tab, cards] of Object.entries(grouped)) {
+        const container = document.getElementById('customCards-' + tab);
+        if (!container) continue;
+        const isAdmin = sessionStorage.getItem('fbcAdmin') === '1';
+        let html = '<h2 class="section-title">Custom Cards</h2><div class="card-list">';
+        cards.forEach(card => {
+          const tag = card.link ? 'a' : 'div';
+          const href = card.link ? ' href="' + card.link + '" target="_blank"' : '';
+          html += '<' + tag + ' class="card"' + href + '>';
+          html += '<div class="card-icon" style="background: #e8f0fe;">';
+          html += '<svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">';
+          html += '<rect x="3" y="3" width="16" height="16" rx="3"/>';
+          html += '<line x1="8" y1="8" x2="14" y2="8"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="8" y1="14" x2="12" y2="14"/>';
+          html += '</svg></div>';
+          html += '<div class="card-body">';
+          html += '<h3>' + card.heading + '</h3>';
+          if (card.body) html += '<p>' + card.body + '</p>';
+          html += '</div>';
+          if (card.link) html += '<span class="card-arrow">&rsaquo;</span>';
+          if (isAdmin) {
+            html += '<button onclick="event.preventDefault();event.stopPropagation();deleteCard(' + card._index + ')" style="position:absolute;top:8px;right:8px;background:#fff0f0;border:none;color:#d14;width:24px;height:24px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Delete card">&times;</button>';
+          }
+          html += '</' + tag + '>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      }
+    }
+
+    function openCardCreator() {
+      if (sessionStorage.getItem('fbcAdmin') !== '1') {
+        switchTab('admin', document.querySelector('.nav-dropdown .tab-btn'));
+        return;
+      }
+      document.getElementById('cardTab').value = 'resources';
+      document.getElementById('cardHeading').value = '';
+      document.getElementById('cardBody').value = '';
+      document.getElementById('cardLink').value = '';
+      document.getElementById('cardStatus').textContent = '';
+      document.getElementById('cardModal').classList.add('open');
+    }
+
+    function closeCardCreator() {
+      document.getElementById('cardModal').classList.remove('open');
+    }
+
+    async function saveCard() {
+      const token = localStorage.getItem('ghToken');
+      if (!token) {
+        document.getElementById('cardStatus').textContent = 'Set your GitHub token first (Admin > Create Notification > expand token setup)';
+        document.getElementById('cardStatus').className = 'card-status error';
+        return;
+      }
+      const heading = document.getElementById('cardHeading').value.trim();
+      if (!heading) {
+        document.getElementById('cardStatus').textContent = 'Heading is required';
+        document.getElementById('cardStatus').className = 'card-status error';
+        return;
+      }
+      const newCard = {
+        tab: document.getElementById('cardTab').value,
+        heading: heading,
+        body: document.getElementById('cardBody').value.trim(),
+        link: document.getElementById('cardLink').value.trim(),
+        created: new Date().toISOString()
+      };
+
+      const statusEl = document.getElementById('cardStatus');
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'card-status';
+
+      try {
+        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const fileData = await fileRes.json();
+        const existing = JSON.parse(atob(fileData.content));
+        existing.push(newCard);
+
+        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: 'Add card: ' + heading,
+            content: btoa(JSON.stringify(existing, null, 2) + '\n'),
+            sha: fileData.sha
+          })
+        });
+        if (updateRes.ok) {
+          customCards = existing;
+          renderCustomCards();
+          statusEl.textContent = 'Card created! Live in ~1 min.';
+          statusEl.className = 'card-status success';
+          setTimeout(() => closeCardCreator(), 1500);
+        } else {
+          const err = await updateRes.json();
+          statusEl.textContent = 'Error: ' + (err.message || 'Failed to save');
+          statusEl.className = 'card-status error';
+        }
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        statusEl.className = 'card-status error';
+      }
+    }
+
+    async function deleteCard(index) {
+      if (!confirm('Delete this card?')) return;
+      const token = localStorage.getItem('ghToken');
+      if (!token) { alert('Set your GitHub token first'); return; }
+      try {
+        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const fileData = await fileRes.json();
+        const existing = JSON.parse(atob(fileData.content));
+        const removed = existing.splice(index, 1);
+        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: 'Remove card: ' + (removed[0] ? removed[0].heading : ''),
+            content: btoa(JSON.stringify(existing, null, 2) + '\n'),
+            sha: fileData.sha
+          })
+        });
+        if (updateRes.ok) {
+          customCards = existing;
+          renderCustomCards();
+        } else {
+          alert('Failed to delete card');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    document.getElementById('cardModal').addEventListener('click', function(e) {
+      if (e.target === this) closeCardCreator();
+    });
+
+    loadCustomCards();
 
     // Restore session if already logged in
     if (sessionStorage.getItem('fbcAdmin') === '1') {
