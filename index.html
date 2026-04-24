@@ -771,6 +771,79 @@
     .card-status.error { color: #d14; }
     .custom-cards-section { margin-top: 0.5rem; }
 
+    /* Shift swap comparison grid */
+    .swap-week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .swap-week-nav button {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0b1c3d;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .swap-week-nav button:hover { border-color: #3b9eff; }
+    .swap-week-nav span { font-size: 12px; color: #6b7a94; }
+    .swap-grid-wrap {
+      border: 1px solid #e2e5ec;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .swap-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .swap-grid th {
+      background: #0b1c3d;
+      color: #fff;
+      padding: 6px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid #0b1c3d;
+    }
+    .swap-grid td {
+      padding: 8px 4px;
+      text-align: center;
+      border: 1px solid #e2e5ec;
+      color: #0b1c3d;
+      cursor: pointer;
+      transition: background 0.1s, transform 0.08s;
+    }
+    .swap-grid .swap-grid-name {
+      background: #d8dce5;
+      font-weight: 700;
+      text-align: left;
+      padding-left: 8px;
+      cursor: default;
+      font-size: 11px;
+    }
+    .swap-grid .swap-cell:hover { background: #e8f0fe; }
+    .swap-grid .swap-cell.selected {
+      background: #0b1c3d !important;
+      color: #fff !important;
+      font-weight: 700;
+    }
+    .swap-grid .swap-cell.selected.shift-west { color: #7cb0ff !important; }
+    .swap-grid .swap-cell.selected.shift-off { color: #ff9ba3 !important; }
+    .swap-selected-info {
+      padding: 8px 12px;
+      background: #fafbfd;
+      font-size: 12px;
+      color: #6b7a94;
+      border-top: 1px solid #e2e5ec;
+    }
+
     /* Shift Request Reason Buttons */
     .reason-btn {
       padding: 10px 8px;
@@ -1091,7 +1164,7 @@
 
         <div class="form-field">
           <label>Your Name</label>
-          <select id="shiftReqEmployee"><option value="">Select your name...</option></select>
+          <select id="shiftReqEmployee" onchange="if(shiftReqState.reason==='swap')renderSwapGrid()"><option value="">Select your name...</option></select>
         </div>
 
         <div class="form-field">
@@ -2094,13 +2167,111 @@
     loadTimeOff();
 
     // --- Shift Change Request Form ---
-    let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '' };
+    let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '', swapWeekOffset: 0 };
     let shiftReqEmployees = [];
+    // Cached shifts keyed by empId → { weekOffset: [Mon..Sun] }
+    let shiftReqCache = {};
+
+    async function fetchShiftsForEmp(empId, weekOffset) {
+      const key = empId + ':' + weekOffset;
+      if (shiftReqCache[key]) return shiftReqCache[key];
+      // Find club for this employee
+      const emp = shiftReqEmployees.find(e => e.id === Number(empId));
+      if (!emp) return null;
+      const monday = getMonday(weekOffset);
+      try {
+        const r = await fetch(SCHEDULE_API + '/clubs/' + emp.club_id + '/schedule?week=' + monday);
+        const data = await r.json();
+        const row = (data.shifts && data.shifts[empId]) || ['','','','','','',''];
+        shiftReqCache[key] = row;
+        return row;
+      } catch (e) { return null; }
+    }
 
     function pickSwapWith(sel) {
       shiftReqState.swapWithId = Number(sel.value) || null;
       const opt = sel.options[sel.selectedIndex];
       shiftReqState.swapWith = opt ? (opt.getAttribute('data-name') || opt.textContent) : '';
+    }
+
+    function changeSwapWeek(dir) {
+      shiftReqState.swapWeekOffset = (shiftReqState.swapWeekOffset || 0) + dir;
+      shiftReqState.dates = []; // clear picks when week changes
+      renderSwapGrid();
+    }
+
+    async function renderSwapGrid() {
+      const grid = document.getElementById('shiftReqSwapGrid');
+      const weekLabel = document.getElementById('swapWeekLabel');
+      if (!grid) return;
+      const empAId = Number(document.getElementById('shiftReqEmployee').value) || null;
+      const empBId = shiftReqState.swapWithId;
+      const offset = shiftReqState.swapWeekOffset || 0;
+      const monday = getMonday(offset);
+
+      if (weekLabel) {
+        const tag = offset === 0 ? 'Current' : (offset > 0 ? '+' + offset + 'w' : offset + 'w');
+        weekLabel.innerHTML = '<strong>' + formatWeekLabel(monday) + '</strong> <span style="color:#8a94a6;margin-left:4px;">(' + tag + ')</span>';
+      }
+
+      if (!empAId || !empBId) {
+        grid.innerHTML = '<div style="padding:1rem;color:#8a94a6;font-size:13px;text-align:center;">Pick your name and a coworker to see their weekly shifts.</div>';
+        return;
+      }
+      if (empAId === empBId) {
+        grid.innerHTML = '<div style="padding:1rem;color:#d14;font-size:13px;text-align:center;">You can\'t swap with yourself.</div>';
+        return;
+      }
+
+      grid.innerHTML = '<div style="padding:1rem;color:#8a94a6;font-size:13px;text-align:center;">Loading schedule...</div>';
+      const [shiftsA, shiftsB] = await Promise.all([
+        fetchShiftsForEmp(empAId, offset),
+        fetchShiftsForEmp(empBId, offset),
+      ]);
+      const empA = shiftReqEmployees.find(e => e.id === empAId);
+      const empB = shiftReqEmployees.find(e => e.id === empBId);
+
+      let html = '<table class="swap-grid"><thead><tr><th></th>';
+      for (let i = 0; i < 7; i++) {
+        html += '<th>' + formatDayHeader(monday, i) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+
+      function rowHtml(label, shifts, isA) {
+        let row = '<tr><td class="swap-grid-name">' + escapeHtml(label) + '</td>';
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday + 'T00:00:00');
+          d.setDate(d.getDate() + i);
+          const isoDate = d.toISOString().slice(0, 10);
+          const val = (shifts && shifts[i]) || '';
+          const cls = classifyShift(val);
+          const selected = shiftReqState.dates.includes(isoDate) ? ' selected' : '';
+          row += '<td class="swap-cell ' + cls + selected + '" data-date="' + isoDate + '" onclick="toggleSwapDate(\'' + isoDate + '\')">' + (val || '—') + '</td>';
+        }
+        row += '</tr>';
+        return row;
+      }
+
+      html += rowHtml('You (' + (empA ? empA.name : '') + ')', shiftsA, true);
+      html += rowHtml(empB ? empB.name : '', shiftsB, false);
+      html += '</tbody></table>';
+      html += '<div class="swap-selected-info">';
+      if (shiftReqState.dates.length) {
+        html += '<strong>' + shiftReqState.dates.length + ' day' + (shiftReqState.dates.length === 1 ? '' : 's') + ' selected</strong>: ' + shiftReqState.dates.join(', ');
+      } else {
+        html += 'Tap any day column to mark it for swap.';
+      }
+      html += '</div>';
+
+      grid.innerHTML = html;
+    }
+
+    function toggleSwapDate(isoDate) {
+      const i = shiftReqState.dates.indexOf(isoDate);
+      if (i >= 0) shiftReqState.dates.splice(i, 1);
+      else shiftReqState.dates.push(isoDate);
+      shiftReqState.dates.sort();
+      renderSwapGrid();
     }
 
     async function populateShiftReqEmployees() {
@@ -2120,8 +2291,15 @@
             id: e.id,
             name: e.name,
             club: club.name,
+            club_id: club.id,
             team: e.team || '',
           }));
+          // Pre-populate the cache for this week
+          if (data.shifts) {
+            Object.keys(data.shifts).forEach(empId => {
+              shiftReqCache[empId + ':0'] = data.shifts[empId];
+            });
+          }
         }
         shiftReqEmployees = allEmps;
         // Render with optgroups per club + team so the grouping is visually obvious
@@ -2196,10 +2374,19 @@
           swapOpts += '<option value="' + e.id + '" data-name="' + e.name + '">' + e.name + '</option>';
         });
         if (swapGroup) swapOpts += '</optgroup>';
-        wrap.innerHTML = datePickerHtml +
+        wrap.innerHTML =
           '<div class="form-field">' +
             '<label>Who do you want to swap with?</label>' +
-            '<select id="shiftReqSwapWith" onchange="pickSwapWith(this)">' + swapOpts + '</select>' +
+            '<select id="shiftReqSwapWith" onchange="pickSwapWith(this);renderSwapGrid()">' + swapOpts + '</select>' +
+          '</div>' +
+          '<div class="form-field">' +
+            '<label>Pick days to swap <span style="font-weight:400;color:#6b7a94;">(tap cells)</span></label>' +
+            '<div class="swap-week-nav">' +
+              '<button type="button" onclick="changeSwapWeek(-1)">&larr; Prev</button>' +
+              '<span id="swapWeekLabel">Current week</span>' +
+              '<button type="button" onclick="changeSwapWeek(1)">Next &rarr;</button>' +
+            '</div>' +
+            '<div id="shiftReqSwapGrid" class="swap-grid-wrap"><div style="padding:1rem;color:#8a94a6;font-size:13px;text-align:center;">Pick your name and a coworker to see their weekly shifts.</div></div>' +
           '</div>' +
           '<div style="padding:8px 12px;background:#e8f0fe;border-radius:8px;font-size:12px;color:#1b66c9;margin-bottom:8px;">' +
             '<strong>Auto-swap:</strong> when your manager approves, the shifts will be exchanged automatically in the schedule.' +
@@ -2208,6 +2395,7 @@
             '<label>Additional details (optional)</label>' +
             '<textarea id="shiftReqNotes" placeholder="Any other details..." oninput="shiftReqState.details=this.value"></textarea>' +
           '</div>';
+        renderSwapGrid();
       } else if (shiftReqState.reason === 'coverage') {
         wrap.innerHTML = datePickerHtml +
           '<div class="form-field">' +
