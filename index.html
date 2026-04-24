@@ -364,25 +364,28 @@
     }
     .schedule-location {
       background: #fff;
-      border: 1px solid #e2e5ec;
-      border-radius: 12px;
+      border: 1px solid #0b1c3d;
+      border-radius: 0;
       overflow: hidden;
-      margin-bottom: 10px;
+      margin-bottom: 18px;
     }
     .schedule-location-header {
       background: #0b1c3d;
       color: #fff;
-      padding: 10px 16px;
-      font-size: 14px;
-      font-weight: 600;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .schedule-location-header .week-label {
       font-size: 12px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.6);
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      letter-spacing: 0.5px;
     }
     .schedule-table {
       width: 100%;
@@ -394,114 +397,69 @@
       border: 1px solid #0b1c3d;
     }
     .schedule-table th {
-      background: #f5f6fa;
-      color: #6b7a94;
-      font-weight: 600;
+      background: #d8dce5;
+      color: #0b1c3d;
+      font-weight: 700;
       padding: 8px 6px;
-      text-align: center;
+      text-align: left;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    .schedule-table th:first-child {
-      text-align: left;
-      padding-left: 14px;
-      min-width: 130px;
-    }
+    .schedule-table th.col-day { text-align: left; padding-left: 10px; }
+    .schedule-table th.col-count { text-align: center; width: 36px; }
     .schedule-table td {
-      padding: 7px 6px;
-      text-align: center;
+      padding: 7px 10px;
+      text-align: left;
       color: #0b1c3d;
       font-size: 12px;
+      background: #e7eaf0;
+    }
+    .schedule-table td.col-count {
+      text-align: center;
+      font-weight: 700;
+      color: #0b1c3d;
     }
     .schedule-table td:first-child {
-      text-align: left;
-      padding-left: 14px;
       font-weight: 500;
       color: #0b1c3d;
     }
-    .schedule-table tbody tr:nth-child(even) td:first-child { background: #d8dce5; }
-    .schedule-table tbody tr:nth-child(even) td.shift-empty { background: #d8dce5; }
-    .schedule-table tr:hover td:first-child { background: #c5cad6; }
-    .schedule-table td.shift-east {
-      background: #f0f1f5;
-      color: #0b1c3d;
-      font-weight: 600;
-    }
-    .schedule-table td.shift-west {
-      background: #e8f0fe;
-      color: #1b66c9;
-      font-weight: 600;
-    }
-    .schedule-table td.shift-beach {
-      background: #e6f7ef;
-      color: #1a9e6d;
-      font-weight: 600;
-    }
-    .schedule-table td.shift-camachee {
-      background: #f3ecff;
-      color: #6b3fcf;
-      font-weight: 600;
-    }
-    .schedule-table td.shift-shipyard {
-      background: #fff4e5;
-      color: #b5651d;
-      font-weight: 600;
-    }
-    .schedule-table td.shift-off {
-      background: #fff0f0;
-      color: #d14;
-      font-weight: 700;
-    }
-    .schedule-table td.shift-empty { color: #d0d3da; background: #fff; }
-    .schedule-table tr:hover td.shift-east { background: #e8e9ef; }
-    .schedule-table tr:hover td.shift-west { background: #d8e6fb; }
-    .schedule-table tr:hover td.shift-beach { background: #d8f0e5; }
-    .schedule-table tr:hover td.shift-camachee { background: #e8dcff; }
-    .schedule-table tr:hover td.shift-shipyard { background: #ffe9c9; }
-    .schedule-table tr:hover td.shift-off { background: #ffe0e0; }
+    .schedule-table td.shift-east { color: #0b1c3d; font-weight: 600; }
+    .schedule-table td.shift-west { color: #1b66c9; font-weight: 600; font-style: italic; text-decoration: underline; }
+    .schedule-table td.shift-beach { color: #0b1c3d; font-weight: 600; }
+    .schedule-table td.shift-camachee { color: #6b3fcf; font-weight: 600; }
+    .schedule-table td.shift-shipyard { color: #b5651d; font-weight: 600; }
+    .schedule-table td.shift-off { color: #e53935; font-weight: 700; }
+    .schedule-table td.shift-empty { color: #b0b5c0; }
 
     /* Totals rows */
     .schedule-table tr.total-row td {
-      background: #0b1c3d;
-      color: #fff;
-      font-weight: 700;
+      background: #0b1c3d !important;
+      color: #fff !important;
+      font-weight: 700 !important;
       font-size: 12px;
-      padding: 6px;
+      padding: 6px 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
     }
-    .schedule-table tr.total-row td:first-child {
-      color: #fff;
-      background: #0b1c3d;
-    }
-    .schedule-table tr.total-row-alt td {
-      background: #e8f0fe;
-      color: #0b1c3d;
-      font-weight: 700;
-    }
-    .schedule-table tr.total-row-alt td:first-child { background: #e8f0fe; color: #0b1c3d; }
+    .schedule-table tr.total-row td:first-child { text-align: left; }
     .schedule-table tr.notes-row td {
-      background: #fafbfd;
-      color: #0b1c3d;
-      font-weight: 500;
-      text-align: left;
+      background: #fafbfd !important;
+      color: #0b1c3d !important;
+      font-weight: 500 !important;
+      text-align: left !important;
       font-style: italic;
       font-size: 12px;
-      padding: 8px 12px;
+      padding: 8px 12px !important;
     }
     .schedule-table tr.notes-row td:first-child {
       font-style: normal;
-      font-weight: 600;
-      color: #6b7a94;
+      font-weight: 600 !important;
+      color: #6b7a94 !important;
       text-transform: uppercase;
       font-size: 11px;
       letter-spacing: 0.3px;
-    }
-    .schedule-disclaimer {
-      font-size: 11px;
-      color: #6b7a94;
-      padding: 8px 14px;
-      background: #fafbfd;
-      border-bottom: 1px solid #e2e5ec;
     }
     .schedule-week-nav {
       display: flex;
@@ -1644,9 +1602,12 @@
     function formatDayHeader(monday, dayIdx) {
       const d = new Date(monday + 'T00:00:00');
       d.setDate(d.getDate() + dayIdx);
-      const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      return dayNames[dayIdx] + '<br><span style="font-weight:400;font-size:10px;">' + monthNames[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + '</span>';
+      return DAYS[dayIdx] + ' ' + (d.getMonth()+1) + '/' + d.getDate();
+    }
+
+    // Is this week the current week?
+    function isCurrentWeek(monday) {
+      return monday === getMonday(0);
     }
 
     function classifyShift(val) {
@@ -1675,11 +1636,11 @@
     }
 
     const TOTAL_LABELS = {
-      'JCE': 'Total Persons JCE',
-      'JCW': 'Total Persons JCW',
-      'JB':  'Total Persons JB',
-      'CC':  'Total Persons CC',
-      'SY':  'Total Persons SY'
+      'JCE': 'Creek East',
+      'JCW': 'Creek West',
+      'JB':  'Beach',
+      'CC':  'Camachee',
+      'SY':  'Shipyard'
     };
 
     async function loadSchedule() {
@@ -1710,36 +1671,41 @@
             const employees = teams[teamName];
             const displayName = (!teamName || teamName === 'null') ? club.name : teamName;
             const isLastTeam = teamIdx === teamNames.length - 1;
+            const weekLabel = isCurrentWeek(monday) ? 'CURRENT WEEK' : formatWeekLabel(monday).toUpperCase();
 
             html += '<div class="schedule-location">';
             html += '<div class="schedule-location-header">';
-            html += '<span>' + club.name + ' &middot; ' + displayName + '</span>';
-            html += '<span class="week-label">' + formatWeekLabel(monday) + '</span>';
+            html += '<span>' + displayName + '</span>';
+            html += '<span class="week-label">' + weekLabel + '</span>';
             html += '</div>';
-            html += '<div class="schedule-disclaimer">All shifts are open to close unless otherwise stated. Open is one hour before the first member goes out and Closing is after all the boats are returned and cleaned for the next day.</div>';
             html += '<table class="schedule-table"><thead><tr><th>Employee</th>';
             for (let i = 0; i < 7; i++) {
-              html += '<th>' + formatDayHeader(monday, i) + '</th>';
+              html += '<th class="col-day">' + formatDayHeader(monday, i) + '</th>';
             }
+            html += '<th class="col-count">#</th>';
             html += '</tr></thead><tbody>';
 
             // Tally totals as we render rows
             const totals = {}; // { 'JCE': [0,0,0,0,0,0,0], ... }
 
             employees.forEach(emp => {
-              html += '<tr data-name="' + emp.name.toLowerCase() + '"><td>' + emp.name + '</td>';
+              let empCount = 0;
+              let rowHtml = '<tr data-name="' + emp.name.toLowerCase() + '"><td>' + emp.name + '</td>';
               for (let i = 0; i < 7; i++) {
                 const shift = (data.shifts[emp.id] && data.shifts[emp.id][i]) || '';
                 const cls = classifyShift(shift);
-                html += '<td class="' + cls + '">' + (shift || '—') + '</td>';
+                rowHtml += '<td class="' + cls + '">' + (shift || '') + '</td>';
 
                 const bucket = countShift(shift);
                 if (bucket) {
                   if (!totals[bucket]) totals[bucket] = [0,0,0,0,0,0,0];
                   totals[bucket][i]++;
+                  empCount++;
                 }
               }
-              html += '</tr>';
+              rowHtml += '<td class="col-count">' + (empCount || '—') + '</td>';
+              rowHtml += '</tr>';
+              html += rowHtml;
             });
 
             // Total rows — one per bucket that appears in this team
@@ -1747,15 +1713,19 @@
             const presentBuckets = bucketOrder.filter(b => totals[b]);
             presentBuckets.forEach(b => {
               html += '<tr class="total-row"><td>' + TOTAL_LABELS[b] + '</td>';
+              let sum = 0;
               for (let i = 0; i < 7; i++) {
-                html += '<td>' + (totals[b][i] || '') + '</td>';
+                const n = totals[b][i] || 0;
+                sum += n;
+                html += '<td>' + (n || '') + '</td>';
               }
+              html += '<td>' + sum + '</td>';
               html += '</tr>';
             });
 
             // Notes row (only on the last team of this club)
             if (isLastTeam && notes) {
-              html += '<tr class="notes-row"><td>Notes</td><td colspan="7">' + notes.replace(/\n/g, '<br>') + '</td></tr>';
+              html += '<tr class="notes-row"><td>Notes</td><td colspan="8">' + notes.replace(/\n/g, '<br>') + '</td></tr>';
             }
 
             html += '</tbody></table></div>';
