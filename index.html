@@ -1779,6 +1779,14 @@
 
     loadSchedule();
 
+    // Auto-refresh schedule every 60s, but only when the Schedule tab is active
+    setInterval(() => {
+      const schedTab = document.getElementById('tab-schedule');
+      if (schedTab && schedTab.classList.contains('active') && document.visibilityState === 'visible') {
+        loadSchedule();
+      }
+    }, 60000);
+
     // Enter key submits admin login
     document.getElementById('adminPassInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') submitAdminLogin();
