@@ -420,7 +420,9 @@
       font-weight: 500;
       color: #0b1c3d;
     }
-    .schedule-table tr:hover td { background: #f8f9fb; }
+    .schedule-table tbody tr:nth-child(even) td:first-child { background: #f5f6fa; }
+    .schedule-table tbody tr:nth-child(even) td.shift-empty { background: #f5f6fa; }
+    .schedule-table tr:hover td:first-child { background: #eef0f5; }
     .schedule-table td.shift-east {
       background: #f0f1f5;
       color: #0b1c3d;
