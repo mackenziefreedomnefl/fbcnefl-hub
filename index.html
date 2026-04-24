@@ -810,46 +810,72 @@
       font-family: inherit;
     }
 
-    /* Time Off Feed */
+    /* Time Off Feed (Slack-style) */
     .timeoff-feed {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-    .timeoff-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
+      gap: 0;
       background: #fff;
       border: 1px solid #e2e5ec;
-      border-left: 4px solid #e2e5ec;
-      border-radius: 8px;
-      font-size: 13px;
-    }
-    .timeoff-row.status-approved { border-left-color: #1a9e6d; }
-    .timeoff-row.status-pending { border-left-color: #c47f17; background: #fffbf3; }
-    .timeoff-name { font-weight: 600; color: #0b1c3d; flex: 1; }
-    .timeoff-club { color: #6b7a94; font-size: 12px; }
-    .timeoff-dates { color: #0b1c3d; font-size: 13px; font-weight: 500; }
-    .timeoff-status {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 3px 8px;
       border-radius: 10px;
+      overflow: hidden;
     }
-    .timeoff-status.status-approved { background: #e6f7ef; color: #1a9e6d; }
-    .timeoff-status.status-pending { background: #fef3e2; color: #c47f17; }
-    .timeoff-note { color: #6b7a94; font-size: 12px; font-style: italic; margin-top: 4px; }
+    .slack-msg {
+      display: flex;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f1f5;
+    }
+    .slack-msg:last-child { border-bottom: none; }
+    .slack-msg:hover { background: #fafbfd; }
+    .slack-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .slack-avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8f0fe;
+      color: #1b66c9;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .slack-body { flex: 1; min-width: 0; }
+    .slack-header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .slack-name { font-weight: 700; color: #0b1c3d; font-size: 14px; }
+    .slack-time { color: #8a94a6; font-size: 11px; }
+    .slack-text {
+      color: #1a2333;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .slack-thread {
+      margin-top: 4px;
+      color: #1b66c9;
+      font-size: 12px;
+      font-weight: 600;
+    }
     .timeoff-empty {
       padding: 1.5rem;
       text-align: center;
       color: #6b7a94;
       font-size: 13px;
-      background: #fafbfd;
-      border-radius: 8px;
+    }
+    .timeoff-empty code {
+      background: #f0f1f5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
     }
 
     /* Small Craft Advisory Banner */
@@ -1248,8 +1274,11 @@
         <div class="schedule-loading">Loading schedule...</div>
       </div>
 
-      <!-- Time Off Feed -->
-      <h2 class="section-title" style="margin-top:1.5rem;">Time Off Requests</h2>
+      <!-- Time Off Feed (from Slack channel) -->
+      <h2 class="section-title" style="margin-top:1.5rem;">
+        Time Off Requests
+        <span style="font-size:12px;font-weight:500;color:#8a94a6;margin-left:8px;">from Slack</span>
+      </h2>
       <div id="timeOffFeed" class="timeoff-feed">
         <div class="schedule-loading">Loading time off...</div>
       </div>
@@ -1884,40 +1913,76 @@
       if (e.key === 'Enter') document.getElementById('adminPassInput').focus();
     });
 
-    // --- Time Off Feed ---
-    function fmtDateRange(start, end) {
-      const s = new Date(start + 'T00:00:00');
-      const e = new Date(end + 'T00:00:00');
-      const sameDay = start === end;
-      const opts = { month: 'short', day: 'numeric' };
-      if (sameDay) return s.toLocaleDateString('en-US', opts);
-      return s.toLocaleDateString('en-US', opts) + ' – ' + e.toLocaleDateString('en-US', opts);
+    // --- Time Off Feed (from Slack channel) ---
+    function fmtSlackTime(ts) {
+      const d = new Date(Number(ts.split('.')[0]) * 1000);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHr = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHr / 24);
+      if (diffMin < 1) return 'just now';
+      if (diffMin < 60) return diffMin + ' min ago';
+      if (diffHr < 24) return diffHr + 'h ago';
+      if (diffDay < 7) return diffDay + 'd ago';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Basic Slack mrkdwn -> HTML
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function renderSlackText(text) {
+      let t = escapeHtml(text);
+      // <@U123> mentions
+      t = t.replace(/&lt;@([A-Z0-9]+)&gt;/g, '<span style="color:#1b66c9;font-weight:600;">@user</span>');
+      // <#C123|name> channel links
+      t = t.replace(/&lt;#[A-Z0-9]+\|([^&]+)&gt;/g, '#$1');
+      // <url|text> links
+      t = t.replace(/&lt;(https?:[^|&]+)\|([^&]+)&gt;/g, '<a href="$1" target="_blank" style="color:#1b66c9;">$2</a>');
+      // <url> links
+      t = t.replace(/&lt;(https?:[^&]+)&gt;/g, '<a href="$1" target="_blank" style="color:#1b66c9;">$1</a>');
+      // *bold*
+      t = t.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+      // Line breaks
+      t = t.replace(/\n/g, '<br>');
+      return t;
     }
 
     async function loadTimeOff() {
       const feed = document.getElementById('timeOffFeed');
       if (!feed) return;
       try {
-        const res = await fetch(SCHEDULE_API + '/time-off/public?t=' + Date.now());
-        const rows = await res.json();
-        if (!Array.isArray(rows) || rows.length === 0) {
-          feed.innerHTML = '<div class="timeoff-empty">No upcoming time-off requests.</div>';
+        const res = await fetch(SCHEDULE_API + '/slack-timeoff/public?t=' + Date.now());
+        const data = await res.json();
+        if (!data.configured) {
+          feed.innerHTML = '<div class="timeoff-empty">Slack feed not configured yet. Set <code>SLACK_TIMEOFF_CHANNEL</code> on the schedule server.</div>';
+          return;
+        }
+        const messages = data.messages || [];
+        if (messages.length === 0) {
+          feed.innerHTML = '<div class="timeoff-empty">No recent time-off messages.</div>';
           return;
         }
         let html = '';
-        rows.forEach(r => {
-          html += '<div class="timeoff-row status-' + r.status + '">';
-          html += '<div style="flex:1;">';
-          html += '<div><span class="timeoff-name">' + r.employee_name + '</span> <span class="timeoff-club">· ' + r.club_name + '</span></div>';
-          if (r.note) html += '<div class="timeoff-note">' + r.note + '</div>';
-          html += '</div>';
-          html += '<div class="timeoff-dates">' + fmtDateRange(r.start_date, r.end_date) + '</div>';
-          html += '<span class="timeoff-status status-' + r.status + '">' + r.status + '</span>';
-          html += '</div>';
+        messages.forEach(m => {
+          html += '<div class="slack-msg">';
+          if (m.user_avatar) {
+            html += '<img class="slack-avatar" src="' + m.user_avatar + '" alt="" />';
+          } else {
+            html += '<div class="slack-avatar slack-avatar-fallback">' + (m.user_name ? m.user_name[0].toUpperCase() : '?') + '</div>';
+          }
+          html += '<div class="slack-body">';
+          html += '<div class="slack-header"><span class="slack-name">' + escapeHtml(m.user_name) + '</span> <span class="slack-time">' + fmtSlackTime(m.ts) + '</span></div>';
+          html += '<div class="slack-text">' + renderSlackText(m.text) + '</div>';
+          if (m.thread_reply_count > 0) {
+            html += '<div class="slack-thread">' + m.thread_reply_count + ' repl' + (m.thread_reply_count === 1 ? 'y' : 'ies') + '</div>';
+          }
+          html += '</div></div>';
         });
         feed.innerHTML = html;
       } catch (e) {
-        feed.innerHTML = '<div class="timeoff-empty">Unable to load time-off requests.</div>';
+        feed.innerHTML = '<div class="timeoff-empty">Unable to load Slack feed.</div>';
       }
     }
 
