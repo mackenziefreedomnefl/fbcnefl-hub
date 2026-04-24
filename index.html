@@ -2110,19 +2110,35 @@
         const clubsRes = await fetch(SCHEDULE_API + '/clubs');
         const clubs = await clubsRes.json();
         const monday = getMonday(0);
+        // Preserve the schedule's order: iterate clubs in returned order, and within each club
+        // iterate employees in the order the API returns them (already sorted by team, sort_order).
         const allEmps = [];
         for (const club of clubs) {
           const r = await fetch(SCHEDULE_API + '/clubs/' + club.id + '/schedule?week=' + monday);
           const data = await r.json();
-          data.employees.forEach(e => allEmps.push({ id: e.id, name: e.name, club: club.name }));
+          data.employees.forEach(e => allEmps.push({
+            id: e.id,
+            name: e.name,
+            club: club.name,
+            team: e.team || '',
+          }));
         }
-        allEmps.sort((a, b) => a.name.localeCompare(b.name));
         shiftReqEmployees = allEmps;
+        // Render with optgroups per club + team so the grouping is visually obvious
+        let currentGroup = '';
+        let optgroup = null;
         allEmps.forEach(e => {
+          const groupLabel = e.club + (e.team ? ' — ' + e.team : '');
+          if (groupLabel !== currentGroup) {
+            optgroup = document.createElement('optgroup');
+            optgroup.label = groupLabel;
+            sel.appendChild(optgroup);
+            currentGroup = groupLabel;
+          }
           const opt = document.createElement('option');
           opt.value = e.id;
-          opt.textContent = e.name + ' (' + e.club + ')';
-          sel.appendChild(opt);
+          opt.textContent = e.name;
+          optgroup.appendChild(opt);
         });
       } catch (e) {
         console.error('Failed to load employees:', e);
@@ -2169,7 +2185,17 @@
 
       if (shiftReqState.reason === 'swap') {
         let swapOpts = '<option value="">Select coworker...</option>';
-        shiftReqEmployees.forEach(e => { swapOpts += '<option value="' + e.id + '" data-name="' + e.name + '">' + e.name + '</option>'; });
+        let swapGroup = '';
+        shiftReqEmployees.forEach(e => {
+          const grp = e.club + (e.team ? ' — ' + e.team : '');
+          if (grp !== swapGroup) {
+            if (swapGroup) swapOpts += '</optgroup>';
+            swapOpts += '<optgroup label="' + grp + '">';
+            swapGroup = grp;
+          }
+          swapOpts += '<option value="' + e.id + '" data-name="' + e.name + '">' + e.name + '</option>';
+        });
+        if (swapGroup) swapOpts += '</optgroup>';
         wrap.innerHTML = datePickerHtml +
           '<div class="form-field">' +
             '<label>Who do you want to swap with?</label>' +
