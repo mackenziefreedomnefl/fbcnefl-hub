@@ -1953,6 +1953,9 @@
       return t;
     }
 
+    // People whose posts in the channel are announcements, not time-off requests
+    const TIMEOFF_EXCLUDE_NAMES = ['mackenzie conley', 'mackenzie'];
+
     // Heuristic: is this message clearly a time-off request (vs. a schedule announcement)?
     function looksLikeTimeOffRequest(text) {
       const t = (text || '').toLowerCase();
@@ -2010,26 +2013,51 @@
           return;
         }
 
-        // Filter to likely time-off requests and clean the text
-        const items = raw
-          .filter(m => looksLikeTimeOffRequest(m.text))
+        // Filter to likely time-off requests and clean each message
+        const perMessage = raw
+          .filter(m => {
+            const nm = (m.user_name || '').toLowerCase().trim();
+            if (TIMEOFF_EXCLUDE_NAMES.includes(nm)) return false;
+            return looksLikeTimeOffRequest(m.text);
+          })
           .map(m => ({
-            name: m.user_name,
+            name: (m.user_name || '').trim(),
+            ts: Number(m.ts.split('.')[0]),
             when: fmtSlackTime(m.ts),
             text: cleanTimeOffText(m.text),
             dates: extractDates(m.text),
           }));
 
-        if (items.length === 0) {
+        if (perMessage.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off requests.</div>';
           return;
         }
 
-        // Detect overlap: group by month-day to find days with 2+ people off
+        // Group messages by employee name (case-insensitive, trimmed)
+        const byName = new Map();
+        perMessage.forEach(m => {
+          const key = m.name.toLowerCase();
+          if (!byName.has(key)) {
+            byName.set(key, { name: m.name, texts: [], dates: [], latestTs: 0, latestWhen: '' });
+          }
+          const g = byName.get(key);
+          if (m.text) g.texts.push(m.text);
+          g.dates.push(...m.dates);
+          if (m.ts > g.latestTs) {
+            g.latestTs = m.ts;
+            g.latestWhen = m.when;
+          }
+        });
+
+        // Sort employees by most recent request first
+        const items = Array.from(byName.values()).sort((a, b) => b.latestTs - a.latestTs);
+
+        // Detect overlap: group by month-day to find days with 2+ different people off
         const dayMap = {}; // 'M/D' -> Set of names
         items.forEach(it => {
-          it.dates.forEach(d => {
-            const key = d.month + '/' + d.day;
+          const uniq = new Set();
+          it.dates.forEach(d => uniq.add(d.month + '/' + d.day));
+          uniq.forEach(key => {
             if (!dayMap[key]) dayMap[key] = new Set();
             dayMap[key].add(it.name);
           });
@@ -2050,10 +2078,19 @@
         }
 
         items.forEach(it => {
+          // Dedupe texts while preserving order
+          const seen = new Set();
+          const deduped = it.texts.filter(t => {
+            const k = t.toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+          const combined = deduped.join(' · ');
           html += '<div class="to-summary-row">';
           html += '<span class="to-summary-name">' + escapeHtml(it.name) + '</span>';
-          html += '<span class="to-summary-dates">' + escapeHtml(it.text) + '</span>';
-          html += '<span class="to-summary-when">' + it.when + '</span>';
+          html += '<span class="to-summary-dates">' + escapeHtml(combined) + '</span>';
+          html += '<span class="to-summary-when">' + it.latestWhen + '</span>';
           html += '</div>';
         });
         feed.innerHTML = html;
