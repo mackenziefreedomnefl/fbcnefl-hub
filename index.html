@@ -2094,8 +2094,14 @@
     loadTimeOff();
 
     // --- Shift Change Request Form ---
-    let shiftReqState = { reason: '', dates: [], swapWith: '', details: '' };
+    let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '' };
     let shiftReqEmployees = [];
+
+    function pickSwapWith(sel) {
+      shiftReqState.swapWithId = Number(sel.value) || null;
+      const opt = sel.options[sel.selectedIndex];
+      shiftReqState.swapWith = opt ? (opt.getAttribute('data-name') || opt.textContent) : '';
+    }
 
     async function populateShiftReqEmployees() {
       const sel = document.getElementById('shiftReqEmployee');
@@ -2124,7 +2130,7 @@
     }
 
     function openShiftRequestForm() {
-      shiftReqState = { reason: '', dates: [], swapWith: '', details: '' };
+      shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '' };
       document.getElementById('shiftReqStatus').textContent = '';
       document.getElementById('shiftReqEmployee').value = '';
       document.getElementById('shiftReqDetails').innerHTML = '';
@@ -2141,6 +2147,7 @@
       shiftReqState.reason = reason;
       shiftReqState.dates = [];
       shiftReqState.swapWith = '';
+      shiftReqState.swapWithId = null;
       shiftReqState.details = '';
       document.querySelectorAll('#shiftReqReasons .reason-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.reason === reason);
@@ -2162,11 +2169,14 @@
 
       if (shiftReqState.reason === 'swap') {
         let swapOpts = '<option value="">Select coworker...</option>';
-        shiftReqEmployees.forEach(e => { swapOpts += '<option value="' + e.name + '">' + e.name + '</option>'; });
+        shiftReqEmployees.forEach(e => { swapOpts += '<option value="' + e.id + '" data-name="' + e.name + '">' + e.name + '</option>'; });
         wrap.innerHTML = datePickerHtml +
           '<div class="form-field">' +
             '<label>Who do you want to swap with?</label>' +
-            '<select id="shiftReqSwapWith" onchange="shiftReqState.swapWith=this.value">' + swapOpts + '</select>' +
+            '<select id="shiftReqSwapWith" onchange="pickSwapWith(this)">' + swapOpts + '</select>' +
+          '</div>' +
+          '<div style="padding:8px 12px;background:#e8f0fe;border-radius:8px;font-size:12px;color:#1b66c9;margin-bottom:8px;">' +
+            '<strong>Auto-swap:</strong> when your manager approves, the shifts will be exchanged automatically in the schedule.' +
           '</div>' +
           '<div class="form-field">' +
             '<label>Additional details (optional)</label>' +
@@ -2220,20 +2230,34 @@
       if (!empId) { status.textContent = 'Please select your name'; status.className = 'card-status error'; return; }
       if (!shiftReqState.reason) { status.textContent = 'Please select a reason'; status.className = 'card-status error'; return; }
       if (!shiftReqState.dates.length) { status.textContent = 'Please add at least one date'; status.className = 'card-status error'; return; }
-      if (shiftReqState.reason === 'swap' && !shiftReqState.swapWith) { status.textContent = 'Please select who to swap with'; status.className = 'card-status error'; return; }
+      if (shiftReqState.reason === 'swap' && !shiftReqState.swapWithId) { status.textContent = 'Please select who to swap with'; status.className = 'card-status error'; return; }
       if (shiftReqState.reason === 'coverage' && !shiftReqState.details.trim()) { status.textContent = 'Please provide a reason for needing coverage'; status.className = 'card-status error'; return; }
 
       const reasonLabels = { swap: 'Swap Shift', coverage: 'Need Coverage', other: 'Other' };
       let body = 'Reason: ' + reasonLabels[shiftReqState.reason] + '\nDates: ' + shiftReqState.dates.join(', ');
       if (shiftReqState.swapWith) body += '\nSwap with: ' + shiftReqState.swapWith;
       if (shiftReqState.details.trim()) body += '\n\n' + shiftReqState.details.trim();
+      if (shiftReqState.reason === 'swap') {
+        body += '\n\n(This is an auto-swap request — approving in the schedule will exchange the shifts automatically.)';
+      }
+
+      const payload = { employee_id: Number(empId), request_text: body };
+      if (shiftReqState.reason === 'swap' && shiftReqState.swapWithId && shiftReqState.dates.length) {
+        payload.kind = 'swap';
+        payload.swap_data = {
+          swap_with_employee_id: shiftReqState.swapWithId,
+          dates: shiftReqState.dates,
+        };
+      } else {
+        payload.kind = shiftReqState.reason;
+      }
 
       status.textContent = 'Submitting...';
       try {
         const res = await fetch(SCHEDULE_API + '/shift-requests', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ employee_id: Number(empId), request_text: body })
+          body: JSON.stringify(payload)
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
