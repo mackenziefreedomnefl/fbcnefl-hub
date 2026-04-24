@@ -771,6 +771,87 @@
     .card-status.error { color: #d14; }
     .custom-cards-section { margin-top: 0.5rem; }
 
+    /* Shift Request Reason Buttons */
+    .reason-btn {
+      padding: 10px 8px;
+      background: #fff;
+      border: 1.5px solid #e2e5ec;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #0b1c3d;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .reason-btn:hover { border-color: #3b9eff; }
+    .reason-btn.active {
+      border-color: #0b1c3d;
+      background: #e8f0fe;
+    }
+    .date-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #e8f0fe;
+      color: #0b1c3d;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 13px;
+      margin: 4px 4px 0 0;
+    }
+    .date-tag button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #d14;
+      font-size: 14px;
+      padding: 0 2px;
+      font-family: inherit;
+    }
+
+    /* Time Off Feed */
+    .timeoff-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .timeoff-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-left: 4px solid #e2e5ec;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .timeoff-row.status-approved { border-left-color: #1a9e6d; }
+    .timeoff-row.status-pending { border-left-color: #c47f17; background: #fffbf3; }
+    .timeoff-name { font-weight: 600; color: #0b1c3d; flex: 1; }
+    .timeoff-club { color: #6b7a94; font-size: 12px; }
+    .timeoff-dates { color: #0b1c3d; font-size: 13px; font-weight: 500; }
+    .timeoff-status {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 10px;
+    }
+    .timeoff-status.status-approved { background: #e6f7ef; color: #1a9e6d; }
+    .timeoff-status.status-pending { background: #fef3e2; color: #c47f17; }
+    .timeoff-note { color: #6b7a94; font-size: 12px; font-style: italic; margin-top: 4px; }
+    .timeoff-empty {
+      padding: 1.5rem;
+      text-align: center;
+      color: #6b7a94;
+      font-size: 13px;
+      background: #fafbfd;
+      border-radius: 8px;
+    }
+
     /* Small Craft Advisory Banner */
     .sca-banner {
       display: flex;
@@ -991,6 +1072,40 @@
       </div>
     </div>
 
+    <!-- Shift Change Request Modal -->
+    <div class="card-modal" id="shiftReqModal">
+      <div class="modal" style="width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+        <h2>Request Shift Change</h2>
+        <p style="color:#6b7a94;font-size:13px;margin-bottom:0.75rem;">Your manager will be notified by email and Slack.</p>
+
+        <div class="form-field">
+          <label>Your Name</label>
+          <select id="shiftReqEmployee"><option value="">Select your name...</option></select>
+        </div>
+
+        <div class="form-field">
+          <label>Reason</label>
+          <div id="shiftReqReasons" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            <button type="button" class="reason-btn" data-reason="swap" onclick="pickShiftReason('swap')"><strong>Swap Shift</strong><br><span style="font-size:11px;color:#6b7a94;">Trade with coworker</span></button>
+            <button type="button" class="reason-btn" data-reason="coverage" onclick="pickShiftReason('coverage')"><strong>Need Coverage</strong><br><span style="font-size:11px;color:#6b7a94;">Conflict, appt, etc.</span></button>
+            <button type="button" class="reason-btn" data-reason="other" onclick="pickShiftReason('other')"><strong>Other</strong><br><span style="font-size:11px;color:#6b7a94;">Something else</span></button>
+          </div>
+        </div>
+
+        <div id="shiftReqDetails"></div>
+
+        <div style="margin:12px 0;padding:10px 14px;background:#fff4e5;border:1px solid #ffd699;border-radius:8px;font-size:12px;color:#92400e;">
+          You are still responsible for this shift until it is officially removed from your schedule.
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-save" onclick="submitShiftRequest()">Submit Request</button>
+          <button class="btn-cancel" onclick="closeShiftRequestForm()">Cancel</button>
+        </div>
+        <div class="card-status" id="shiftReqStatus"></div>
+      </div>
+    </div>
+
     <!-- HOME TAB -->
     <div class="tab-panel active" id="tab-home">
 
@@ -1118,7 +1233,10 @@
 
     <!-- SCHEDULE TAB -->
     <div class="tab-panel" id="tab-schedule">
-    <h2 class="section-title">Weekly Schedule</h2>
+    <h2 class="section-title">
+      Weekly Schedule
+      <button onclick="openShiftRequestForm()" style="margin-left:auto;background:#0b1c3d;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Request Shift Change</button>
+    </h2>
     <div class="schedule-section" id="scheduleSection">
       <div class="schedule-week-nav">
         <button id="prevWeekBtn" onclick="changeWeek(-1)">&larr; Prev</button>
@@ -1128,6 +1246,12 @@
       <input type="text" class="schedule-search" id="scheduleSearch" placeholder="Search employee name..." oninput="filterSchedule(this.value)" />
       <div id="scheduleContainer">
         <div class="schedule-loading">Loading schedule...</div>
+      </div>
+
+      <!-- Time Off Feed -->
+      <h2 class="section-title" style="margin-top:1.5rem;">Time Off Requests</h2>
+      <div id="timeOffFeed" class="timeoff-feed">
+        <div class="schedule-loading">Loading time off...</div>
       </div>
     </div>
     </div><!-- end tab-schedule -->
@@ -1760,11 +1884,210 @@
       if (e.key === 'Enter') document.getElementById('adminPassInput').focus();
     });
 
+    // --- Time Off Feed ---
+    function fmtDateRange(start, end) {
+      const s = new Date(start + 'T00:00:00');
+      const e = new Date(end + 'T00:00:00');
+      const sameDay = start === end;
+      const opts = { month: 'short', day: 'numeric' };
+      if (sameDay) return s.toLocaleDateString('en-US', opts);
+      return s.toLocaleDateString('en-US', opts) + ' – ' + e.toLocaleDateString('en-US', opts);
+    }
+
+    async function loadTimeOff() {
+      const feed = document.getElementById('timeOffFeed');
+      if (!feed) return;
+      try {
+        const res = await fetch(SCHEDULE_API + '/time-off/public?t=' + Date.now());
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) {
+          feed.innerHTML = '<div class="timeoff-empty">No upcoming time-off requests.</div>';
+          return;
+        }
+        let html = '';
+        rows.forEach(r => {
+          html += '<div class="timeoff-row status-' + r.status + '">';
+          html += '<div style="flex:1;">';
+          html += '<div><span class="timeoff-name">' + r.employee_name + '</span> <span class="timeoff-club">· ' + r.club_name + '</span></div>';
+          if (r.note) html += '<div class="timeoff-note">' + r.note + '</div>';
+          html += '</div>';
+          html += '<div class="timeoff-dates">' + fmtDateRange(r.start_date, r.end_date) + '</div>';
+          html += '<span class="timeoff-status status-' + r.status + '">' + r.status + '</span>';
+          html += '</div>';
+        });
+        feed.innerHTML = html;
+      } catch (e) {
+        feed.innerHTML = '<div class="timeoff-empty">Unable to load time-off requests.</div>';
+      }
+    }
+
+    loadTimeOff();
+
+    // --- Shift Change Request Form ---
+    let shiftReqState = { reason: '', dates: [], swapWith: '', details: '' };
+    let shiftReqEmployees = [];
+
+    async function populateShiftReqEmployees() {
+      const sel = document.getElementById('shiftReqEmployee');
+      if (sel.options.length > 1) return; // already loaded
+      try {
+        const clubsRes = await fetch(SCHEDULE_API + '/clubs');
+        const clubs = await clubsRes.json();
+        const monday = getMonday(0);
+        const allEmps = [];
+        for (const club of clubs) {
+          const r = await fetch(SCHEDULE_API + '/clubs/' + club.id + '/schedule?week=' + monday);
+          const data = await r.json();
+          data.employees.forEach(e => allEmps.push({ id: e.id, name: e.name, club: club.name }));
+        }
+        allEmps.sort((a, b) => a.name.localeCompare(b.name));
+        shiftReqEmployees = allEmps;
+        allEmps.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e.id;
+          opt.textContent = e.name + ' (' + e.club + ')';
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Failed to load employees:', e);
+      }
+    }
+
+    function openShiftRequestForm() {
+      shiftReqState = { reason: '', dates: [], swapWith: '', details: '' };
+      document.getElementById('shiftReqStatus').textContent = '';
+      document.getElementById('shiftReqEmployee').value = '';
+      document.getElementById('shiftReqDetails').innerHTML = '';
+      document.querySelectorAll('#shiftReqReasons .reason-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('shiftReqModal').classList.add('open');
+      populateShiftReqEmployees();
+    }
+
+    function closeShiftRequestForm() {
+      document.getElementById('shiftReqModal').classList.remove('open');
+    }
+
+    function pickShiftReason(reason) {
+      shiftReqState.reason = reason;
+      shiftReqState.dates = [];
+      shiftReqState.swapWith = '';
+      shiftReqState.details = '';
+      document.querySelectorAll('#shiftReqReasons .reason-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.reason === reason);
+      });
+      renderShiftReqDetails();
+    }
+
+    function renderShiftReqDetails() {
+      const wrap = document.getElementById('shiftReqDetails');
+      const datePickerHtml =
+        '<div class="form-field">' +
+          '<label>Date(s)</label>' +
+          '<div style="display:flex;gap:8px;align-items:center;">' +
+            '<input type="date" id="shiftReqDateInput" style="flex:1;padding:8px 10px;font-size:14px;border:1.5px solid #e2e5ec;border-radius:8px;font-family:inherit;" />' +
+            '<button type="button" onclick="addShiftReqDate()" style="padding:8px 14px;background:#0b1c3d;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;">+ Add</button>' +
+          '</div>' +
+          '<div id="shiftReqDateList" style="margin-top:6px;"></div>' +
+        '</div>';
+
+      if (shiftReqState.reason === 'swap') {
+        let swapOpts = '<option value="">Select coworker...</option>';
+        shiftReqEmployees.forEach(e => { swapOpts += '<option value="' + e.name + '">' + e.name + '</option>'; });
+        wrap.innerHTML = datePickerHtml +
+          '<div class="form-field">' +
+            '<label>Who do you want to swap with?</label>' +
+            '<select id="shiftReqSwapWith" onchange="shiftReqState.swapWith=this.value">' + swapOpts + '</select>' +
+          '</div>' +
+          '<div class="form-field">' +
+            '<label>Additional details (optional)</label>' +
+            '<textarea id="shiftReqNotes" placeholder="Any other details..." oninput="shiftReqState.details=this.value"></textarea>' +
+          '</div>';
+      } else if (shiftReqState.reason === 'coverage') {
+        wrap.innerHTML = datePickerHtml +
+          '<div class="form-field">' +
+            '<label>Why do you need coverage?</label>' +
+            '<textarea id="shiftReqNotes" placeholder="Please provide a reason..." oninput="shiftReqState.details=this.value"></textarea>' +
+          '</div>';
+      } else if (shiftReqState.reason === 'other') {
+        wrap.innerHTML = datePickerHtml +
+          '<div class="form-field">' +
+            '<label>Describe your request</label>' +
+            '<textarea id="shiftReqNotes" placeholder="What do you need?" oninput="shiftReqState.details=this.value"></textarea>' +
+          '</div>';
+      } else {
+        wrap.innerHTML = '';
+      }
+    }
+
+    function addShiftReqDate() {
+      const input = document.getElementById('shiftReqDateInput');
+      if (input && input.value && !shiftReqState.dates.includes(input.value)) {
+        shiftReqState.dates.push(input.value);
+        input.value = '';
+        renderShiftReqDateList();
+      }
+    }
+
+    function removeShiftReqDate(idx) {
+      shiftReqState.dates.splice(idx, 1);
+      renderShiftReqDateList();
+    }
+
+    function renderShiftReqDateList() {
+      const list = document.getElementById('shiftReqDateList');
+      if (!list) return;
+      list.innerHTML = shiftReqState.dates.map((d, i) => {
+        const dt = new Date(d + 'T00:00:00');
+        const pretty = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return '<span class="date-tag">' + pretty + ' <button onclick="removeShiftReqDate(' + i + ')">&times;</button></span>';
+      }).join('');
+    }
+
+    async function submitShiftRequest() {
+      const status = document.getElementById('shiftReqStatus');
+      status.className = 'card-status';
+      const empId = document.getElementById('shiftReqEmployee').value;
+      if (!empId) { status.textContent = 'Please select your name'; status.className = 'card-status error'; return; }
+      if (!shiftReqState.reason) { status.textContent = 'Please select a reason'; status.className = 'card-status error'; return; }
+      if (!shiftReqState.dates.length) { status.textContent = 'Please add at least one date'; status.className = 'card-status error'; return; }
+      if (shiftReqState.reason === 'swap' && !shiftReqState.swapWith) { status.textContent = 'Please select who to swap with'; status.className = 'card-status error'; return; }
+      if (shiftReqState.reason === 'coverage' && !shiftReqState.details.trim()) { status.textContent = 'Please provide a reason for needing coverage'; status.className = 'card-status error'; return; }
+
+      const reasonLabels = { swap: 'Swap Shift', coverage: 'Need Coverage', other: 'Other' };
+      let body = 'Reason: ' + reasonLabels[shiftReqState.reason] + '\nDates: ' + shiftReqState.dates.join(', ');
+      if (shiftReqState.swapWith) body += '\nSwap with: ' + shiftReqState.swapWith;
+      if (shiftReqState.details.trim()) body += '\n\n' + shiftReqState.details.trim();
+
+      status.textContent = 'Submitting...';
+      try {
+        const res = await fetch(SCHEDULE_API + '/shift-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ employee_id: Number(empId), request_text: body })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Submit failed');
+        }
+        status.textContent = 'Request submitted! Your manager has been notified.';
+        status.className = 'card-status success';
+        setTimeout(() => closeShiftRequestForm(), 1800);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'card-status error';
+      }
+    }
+
+    document.getElementById('shiftReqModal').addEventListener('click', function(e) {
+      if (e.target === this) closeShiftRequestForm();
+    });
+
     // Auto-refresh schedule every 60s, but only when the Schedule tab is active
     setInterval(() => {
       const schedTab = document.getElementById('tab-schedule');
       if (schedTab && schedTab.classList.contains('active') && document.visibilityState === 'visible') {
         loadSchedule();
+        loadTimeOff();
       }
     }, 60000);
 
