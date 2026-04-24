@@ -810,61 +810,46 @@
       font-family: inherit;
     }
 
-    /* Time Off Feed (Slack-style) */
+    /* Time Off Feed — compact summary */
     .timeoff-feed {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
       background: #fff;
       border: 1px solid #e2e5ec;
       border-radius: 10px;
       overflow: hidden;
     }
-    .slack-msg {
-      display: flex;
-      gap: 10px;
-      padding: 10px 14px;
-      border-bottom: 1px solid #f0f1f5;
-    }
-    .slack-msg:last-child { border-bottom: none; }
-    .slack-msg:hover { background: #fafbfd; }
-    .slack-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 6px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .slack-avatar-fallback {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #e8f0fe;
-      color: #1b66c9;
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .slack-body { flex: 1; min-width: 0; }
-    .slack-header {
+    .to-summary-row {
       display: flex;
       align-items: baseline;
-      gap: 8px;
-      margin-bottom: 2px;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #f0f1f5;
+      font-size: 13px;
     }
-    .slack-name { font-weight: 700; color: #0b1c3d; font-size: 14px; }
-    .slack-time { color: #8a94a6; font-size: 11px; }
-    .slack-text {
+    .to-summary-row:last-child { border-bottom: none; }
+    .to-summary-row:hover { background: #fafbfd; }
+    .to-summary-name {
+      font-weight: 700;
+      color: #0b1c3d;
+      min-width: 140px;
+      flex-shrink: 0;
+    }
+    .to-summary-dates {
       color: #1a2333;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
+      flex: 1;
     }
-    .slack-thread {
-      margin-top: 4px;
-      color: #1b66c9;
+    .to-summary-when {
+      color: #8a94a6;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .to-summary-conflict {
+      padding: 10px 14px;
+      background: #fff4e5;
+      border-bottom: 1px solid #ffd699;
       font-size: 12px;
-      font-weight: 600;
+      color: #92400e;
     }
+    .to-summary-conflict strong { color: #b5651d; }
     .timeoff-empty {
       padding: 1.5rem;
       text-align: center;
@@ -1949,6 +1934,66 @@
       return t;
     }
 
+    // Clean up a free-form time-off message into a compact "dates / note" string.
+    // Strips leading filler like "Requesting", "Request off", "off", "Please", etc.
+    function cleanTimeOffText(text) {
+      let t = (text || '').trim();
+      // Normalize multiple spaces/newlines
+      t = t.replace(/\s+/g, ' ').trim();
+      // Remove a handful of common leading phrases (case-insensitive)
+      t = t.replace(/^(i\s+am\s+)?(requesting|request|req)(\s+(time\s+off|off))?\s*[:\-]?\s*/i, '');
+      t = t.replace(/^off\s+/i, '');
+      t = t.replace(/^please\s+/i, '');
+      t = t.replace(/^(week\s+of)\s+/i, 'Week of ');
+      t = t.replace(/\s+please\.?$/i, '');
+      // Trim punctuation
+      t = t.replace(/[.;:,-]+$/, '').trim();
+      // Capitalize first letter
+      if (t.length) t = t[0].toUpperCase() + t.slice(1);
+      return t;
+    }
+
+    // Heuristic: is this message clearly a time-off request (vs. a schedule announcement)?
+    function looksLikeTimeOffRequest(text) {
+      const t = (text || '').toLowerCase();
+      // Skip obvious schedule-manager announcements
+      if (/schedule\s+(for|will|is)|posted|sorry|delay|button|edit\s+ours/i.test(t)) return false;
+      // Accept if contains a date-like pattern or common time-off words
+      if (/\d+\/\d+|\d+(st|nd|rd|th)|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|week\s+of/i.test(t)) return true;
+      return false;
+    }
+
+    // Extract MM/DD tokens from a cleaned text string → returns array of { month, day }
+    function extractDates(text) {
+      const dates = [];
+      const t = (text || '').toLowerCase();
+      const MONTHS = { jan:1, feb:2, mar:3, apr:4, april:4, may:5, jun:6, june:6, jul:7, july:7, aug:8, sep:9, sept:9, oct:10, nov:11, dec:12 };
+      // MM/DD or MM/DD-MM/DD  (years optional)
+      const mmdd = /(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?/g;
+      let m;
+      while ((m = mmdd.exec(t)) !== null) {
+        dates.push({ month: Number(m[1]), day: Number(m[2]) });
+      }
+      // Month Day or Month Day-Day  (e.g., "May 16-20", "June 13th")
+      const monthNamePat = /(jan|feb|mar|apr|april|may|jun|june|jul|july|aug|sep|sept|oct|nov|dec)(?:uary|ruary|ch|il|e|y|ust|tember|ober|ember)?\s+(\d{1,2})(?:\s*(?:st|nd|rd|th))?(?:\s*(?:-|–|to|through|thru)\s*(\d{1,2}))?/gi;
+      while ((m = monthNamePat.exec(text)) !== null) {
+        const mo = MONTHS[m[1].toLowerCase().slice(0,3)];
+        if (!mo) continue;
+        const d1 = Number(m[2]);
+        const d2 = m[3] ? Number(m[3]) : d1;
+        for (let d = d1; d <= d2; d++) dates.push({ month: mo, day: d });
+      }
+      // Range in MM/DD-DD form (e.g., 5/16-20)
+      const mmddRange = /(\d{1,2})\/(\d{1,2})\s*(?:-|–|to|through|thru)\s*(\d{1,2})(?!\/)/g;
+      while ((m = mmddRange.exec(t)) !== null) {
+        const mo = Number(m[1]);
+        const d1 = Number(m[2]);
+        const d2 = Number(m[3]);
+        for (let d = d1 + 1; d <= d2; d++) dates.push({ month: mo, day: d });
+      }
+      return dates;
+    }
+
     async function loadTimeOff() {
       const feed = document.getElementById('timeOffFeed');
       if (!feed) return;
@@ -1959,26 +2004,57 @@
           feed.innerHTML = '<div class="timeoff-empty">Slack feed not configured yet. Set <code>SLACK_TIMEOFF_CHANNEL</code> on the schedule server.</div>';
           return;
         }
-        const messages = data.messages || [];
-        if (messages.length === 0) {
+        const raw = data.messages || [];
+        if (raw.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off messages.</div>';
           return;
         }
+
+        // Filter to likely time-off requests and clean the text
+        const items = raw
+          .filter(m => looksLikeTimeOffRequest(m.text))
+          .map(m => ({
+            name: m.user_name,
+            when: fmtSlackTime(m.ts),
+            text: cleanTimeOffText(m.text),
+            dates: extractDates(m.text),
+          }));
+
+        if (items.length === 0) {
+          feed.innerHTML = '<div class="timeoff-empty">No recent time-off requests.</div>';
+          return;
+        }
+
+        // Detect overlap: group by month-day to find days with 2+ people off
+        const dayMap = {}; // 'M/D' -> Set of names
+        items.forEach(it => {
+          it.dates.forEach(d => {
+            const key = d.month + '/' + d.day;
+            if (!dayMap[key]) dayMap[key] = new Set();
+            dayMap[key].add(it.name);
+          });
+        });
+        const conflicts = Object.entries(dayMap)
+          .filter(([k, v]) => v.size >= 2)
+          .sort((a, b) => {
+            const [ma, da] = a[0].split('/').map(Number);
+            const [mb, db] = b[0].split('/').map(Number);
+            return (ma - mb) || (da - db);
+          });
+
         let html = '';
-        messages.forEach(m => {
-          html += '<div class="slack-msg">';
-          if (m.user_avatar) {
-            html += '<img class="slack-avatar" src="' + m.user_avatar + '" alt="" />';
-          } else {
-            html += '<div class="slack-avatar slack-avatar-fallback">' + (m.user_name ? m.user_name[0].toUpperCase() : '?') + '</div>';
-          }
-          html += '<div class="slack-body">';
-          html += '<div class="slack-header"><span class="slack-name">' + escapeHtml(m.user_name) + '</span> <span class="slack-time">' + fmtSlackTime(m.ts) + '</span></div>';
-          html += '<div class="slack-text">' + renderSlackText(m.text) + '</div>';
-          if (m.thread_reply_count > 0) {
-            html += '<div class="slack-thread">' + m.thread_reply_count + ' repl' + (m.thread_reply_count === 1 ? 'y' : 'ies') + '</div>';
-          }
-          html += '</div></div>';
+        if (conflicts.length > 0) {
+          html += '<div class="to-summary-conflict"><strong>Overlaps:</strong> ';
+          html += conflicts.map(([d, names]) => d + ' (' + names.size + ': ' + Array.from(names).join(', ') + ')').join(' · ');
+          html += '</div>';
+        }
+
+        items.forEach(it => {
+          html += '<div class="to-summary-row">';
+          html += '<span class="to-summary-name">' + escapeHtml(it.name) + '</span>';
+          html += '<span class="to-summary-dates">' + escapeHtml(it.text) + '</span>';
+          html += '<span class="to-summary-when">' + it.when + '</span>';
+          html += '</div>';
         });
         feed.innerHTML = html;
       } catch (e) {
