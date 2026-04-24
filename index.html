@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="public/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="public/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -1402,26 +1403,20 @@
     <div id="adminLoginPrompt">
       <div style="text-align:center; padding: 2rem 0;">
         <h2 class="section-title" style="text-align:center;">Admin Access</h2>
-        <p style="color:#6b7a94; margin-bottom:1rem;">Sign in to access admin tools</p>
-        <div style="max-width:320px; margin:0 auto;">
-          <div class="form-field" style="text-align:left; margin-bottom:0.75rem;">
-            <label style="display:block;font-size:12px;font-weight:600;color:#6b7a94;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Email</label>
-            <input type="email" id="adminEmailInput" placeholder="you@freedomboatclub.com" style="width:100%;padding:10px 14px;font-size:15px;border:1.5px solid #e2e5ec;border-radius:8px;outline:none;font-family:inherit;" />
-          </div>
-          <div class="form-field" style="text-align:left; margin-bottom:0.75rem;">
-            <label style="display:block;font-size:12px;font-weight:600;color:#6b7a94;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Password</label>
-            <input type="password" id="adminPassInput" placeholder="Enter password" style="width:100%;padding:10px 14px;font-size:15px;border:1.5px solid #e2e5ec;border-radius:8px;outline:none;font-family:inherit;" />
-          </div>
-          <div id="adminLoginError" style="color:#d14;font-size:13px;margin-bottom:8px;display:none;">Invalid email or password.</div>
-          <button onclick="submitAdminLogin()" style="width:100%;padding:12px;background:#0b1c3d;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">Log In</button>
+        <p style="color:#6b7a94; margin-bottom:1.25rem;">Sign in with your Freedom Boat Club Google account</p>
+        <div style="display:flex;justify-content:center;">
+          <div id="gSignInBtn"></div>
         </div>
+        <div id="adminLoginError" style="color:#d14;font-size:13px;margin-top:14px;display:none;">Access denied. Only approved Freedom Boat Club accounts can sign in.</div>
+        <p style="color:#8a94a6;font-size:11px;margin-top:1.25rem;">Approved domains: freedomboatclub.com</p>
       </div>
     </div>
 
     <div id="adminTools" style="display:none;">
       <h2 class="section-title">
         Admin Tools
-        <span class="badge badge-admin">Logged In</span>
+        <span class="badge badge-admin">Signed in</span>
+        <span id="adminUserName" style="font-size:12px;font-weight:500;color:#6b7a94;margin-left:8px;"></span>
         <button onclick="adminLogout()" style="margin-left:auto;background:none;border:none;color:#d14;font-size:13px;cursor:pointer;font-weight:500;">Logout</button>
       </h2>
       <div class="card-list">
@@ -1461,42 +1456,88 @@
   </div>
 
   <script>
-    // Admin accounts — add/change email:password pairs here
-    const ADMIN_ACCOUNTS = {
-      'mackenzie.conley@freedomboatclub.com': '2026',
-      // Add more: 'user@fbcnefl.com': 'theirpassword',
-    };
+    // --- Google Sign-In ---
+    // TODO: Paste your Google OAuth Client ID here (from console.cloud.google.com)
+    const GOOGLE_CLIENT_ID = 'PASTE_YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
 
-    function submitAdminLogin() {
-      const email = document.getElementById('adminEmailInput').value.trim().toLowerCase();
-      const pass = document.getElementById('adminPassInput').value;
-      if (ADMIN_ACCOUNTS[email] && ADMIN_ACCOUNTS[email] === pass) {
-        sessionStorage.setItem('fbcAdmin', '1');
-        sessionStorage.setItem('fbcAdminEmail', email);
-        showAdminTools();
-      } else {
+    // Allowed email domains (anyone with an email at these domains can sign in as admin)
+    const ALLOWED_DOMAINS = ['freedomboatclub.com'];
+    // Individual email addresses that are also allowed (for testing/owner accounts)
+    const ALLOWED_EMAILS = ['mtconley17@gmail.com'];
+
+    // Decode a Google ID token (JWT) — client-side only, we just read the email
+    function decodeJwt(token) {
+      try {
+        const payload = token.split('.')[1];
+        const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decodeURIComponent(escape(json)));
+      } catch (e) { return null; }
+    }
+
+    function handleGoogleCredential(response) {
+      const data = decodeJwt(response.credential);
+      if (!data || !data.email) {
         document.getElementById('adminLoginError').style.display = 'block';
-        document.getElementById('adminPassInput').value = '';
-        document.getElementById('adminPassInput').focus();
+        return;
       }
+      const email = data.email.toLowerCase();
+      const domain = email.split('@')[1] || '';
+      const allowed = ALLOWED_EMAILS.includes(email) || ALLOWED_DOMAINS.includes(domain);
+      if (!allowed) {
+        document.getElementById('adminLoginError').style.display = 'block';
+        return;
+      }
+      sessionStorage.setItem('fbcAdmin', '1');
+      sessionStorage.setItem('fbcAdminEmail', email);
+      sessionStorage.setItem('fbcAdminName', data.name || email);
+      showAdminTools();
+    }
+
+    function initGoogleSignIn() {
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        // GSI script not loaded yet — retry shortly
+        return setTimeout(initGoogleSignIn, 250);
+      }
+      if (GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+        const btn = document.getElementById('gSignInBtn');
+        if (btn) btn.innerHTML = '<div style="color:#d14;font-size:13px;padding:12px;background:#fff0f0;border-radius:8px;">Google Sign-In not configured yet. Admin must paste Client ID in index.html.</div>';
+        return;
+      }
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('gSignInBtn'),
+        { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'rectangular', width: 260 }
+      );
     }
 
     function showAdminTools() {
       document.getElementById('adminLoginPrompt').style.display = 'none';
       document.getElementById('adminTools').style.display = '';
       document.getElementById('noticeBanner').classList.add('admin-visible');
+      const nameEl = document.getElementById('adminUserName');
+      if (nameEl) nameEl.textContent = sessionStorage.getItem('fbcAdminName') || sessionStorage.getItem('fbcAdminEmail') || '';
+      document.getElementById('adminLoginError').style.display = 'none';
     }
 
     function adminLogout() {
       sessionStorage.removeItem('fbcAdmin');
       sessionStorage.removeItem('fbcAdminEmail');
+      sessionStorage.removeItem('fbcAdminName');
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.disableAutoSelect();
+      }
       document.getElementById('adminLoginPrompt').style.display = '';
       document.getElementById('adminTools').style.display = 'none';
       document.getElementById('noticeBanner').classList.remove('admin-visible');
-      document.getElementById('adminEmailInput').value = '';
-      document.getElementById('adminPassInput').value = '';
       document.getElementById('adminLoginError').style.display = 'none';
     }
+
+    initGoogleSignIn();
 
     // --- Notice / Push Notification ---
     let currentNotice = {};
@@ -1787,13 +1828,6 @@
       }
     }, 60000);
 
-    // Enter key submits admin login
-    document.getElementById('adminPassInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') submitAdminLogin();
-    });
-    document.getElementById('adminEmailInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') document.getElementById('adminPassInput').focus();
-    });
 
     // --- Custom Cards ---
     const CARDS_PATH = 'cards.json';
