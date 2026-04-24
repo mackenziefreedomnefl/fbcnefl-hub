@@ -2052,31 +2052,7 @@
         // Sort employees by most recent request first
         const items = Array.from(byName.values()).sort((a, b) => b.latestTs - a.latestTs);
 
-        // Detect overlap: group by month-day to find days with 2+ different people off
-        const dayMap = {}; // 'M/D' -> Set of names
-        items.forEach(it => {
-          const uniq = new Set();
-          it.dates.forEach(d => uniq.add(d.month + '/' + d.day));
-          uniq.forEach(key => {
-            if (!dayMap[key]) dayMap[key] = new Set();
-            dayMap[key].add(it.name);
-          });
-        });
-        const conflicts = Object.entries(dayMap)
-          .filter(([k, v]) => v.size >= 2)
-          .sort((a, b) => {
-            const [ma, da] = a[0].split('/').map(Number);
-            const [mb, db] = b[0].split('/').map(Number);
-            return (ma - mb) || (da - db);
-          });
-
         let html = '';
-        if (conflicts.length > 0) {
-          html += '<div class="to-summary-conflict"><strong>Overlaps:</strong> ';
-          html += conflicts.map(([d, names]) => d + ' (' + names.size + ': ' + Array.from(names).join(', ') + ')').join(' · ');
-          html += '</div>';
-        }
-
         items.forEach(it => {
           // Dedupe texts while preserving order
           const seen = new Set();
