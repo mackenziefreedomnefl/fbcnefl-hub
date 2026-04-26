@@ -397,39 +397,47 @@
       border: 1px solid #0b1c3d;
     }
     .schedule-table th {
-      background: #d8dce5;
-      color: #0b1c3d;
+      background: #0b1c3d;
+      color: #fff;
       font-weight: 700;
-      padding: 8px 6px;
+      padding: 10px 10px;
       text-align: left;
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
     }
     .schedule-table th.col-day { text-align: left; padding-left: 10px; }
     .schedule-table th.col-count { text-align: center; width: 36px; }
     .schedule-table td {
-      padding: 7px 10px;
+      padding: 9px 10px;
       text-align: left;
       color: #0b1c3d;
       font-size: 12px;
+      background: #fff;
+    }
+    .schedule-table tbody tr:nth-child(even) td {
       background: #e7eaf0;
     }
     .schedule-table td.col-count {
       text-align: center;
       font-weight: 700;
-      color: #0b1c3d;
+      background: #0b1c3d;
+      color: #fff;
+    }
+    .schedule-table tbody tr:nth-child(even) td.col-count {
+      background: #0b1c3d;
+      color: #fff;
     }
     .schedule-table td:first-child {
       font-weight: 500;
       color: #0b1c3d;
     }
     .schedule-table td.shift-east { color: #0b1c3d; font-weight: 600; }
-    .schedule-table td.shift-west { color: #1b66c9; font-weight: 600; font-style: italic; text-decoration: underline; }
+    .schedule-table td.shift-west { color: #6b9fe0; font-weight: 600; font-style: italic; }
     .schedule-table td.shift-beach { color: #0b1c3d; font-weight: 600; }
     .schedule-table td.shift-camachee { color: #6b3fcf; font-weight: 600; }
     .schedule-table td.shift-shipyard { color: #b5651d; font-weight: 600; }
-    .schedule-table td.shift-off { color: #e53935; font-weight: 700; }
+    .schedule-table td.shift-off { color: #ef6b5a; font-weight: 700; }
     .schedule-table td.shift-empty { color: #b0b5c0; }
 
     /* Totals rows */
@@ -1810,8 +1818,9 @@
       const d = new Date(monday + 'T00:00:00');
       const end = new Date(d);
       end.setDate(end.getDate() + 6);
-      const opts = { month: 'short', day: 'numeric' };
-      return d.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
+      const startMonth = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+      const endMonth = end.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+      return startMonth + ' ' + d.getDate() + ' — ' + endMonth + ' ' + end.getDate() + ', ' + end.getFullYear();
     }
 
     function formatDayHeader(monday, dayIdx) {
@@ -1886,7 +1895,7 @@
             const employees = teams[teamName];
             const displayName = (!teamName || teamName === 'null') ? club.name : teamName;
             const isLastTeam = teamIdx === teamNames.length - 1;
-            const weekLabel = isCurrentWeek(monday) ? 'CURRENT WEEK' : formatWeekLabel(monday).toUpperCase();
+            const weekLabel = formatWeekLabel(monday);
 
             html += '<div class="schedule-location">';
             html += '<div class="schedule-location-header">';
