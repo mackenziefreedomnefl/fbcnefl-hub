@@ -397,39 +397,47 @@
       border: 1px solid #0b1c3d;
     }
     .schedule-table th {
-      background: #d8dce5;
-      color: #0b1c3d;
+      background: #0b1c3d;
+      color: #fff;
       font-weight: 700;
-      padding: 8px 6px;
+      padding: 10px 10px;
       text-align: left;
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
     }
     .schedule-table th.col-day { text-align: left; padding-left: 10px; }
     .schedule-table th.col-count { text-align: center; width: 36px; }
     .schedule-table td {
-      padding: 7px 10px;
+      padding: 9px 10px;
       text-align: left;
       color: #0b1c3d;
       font-size: 12px;
+      background: #fff;
+    }
+    .schedule-table tbody tr:nth-child(even) td {
       background: #e7eaf0;
     }
     .schedule-table td.col-count {
       text-align: center;
       font-weight: 700;
-      color: #0b1c3d;
+      background: #0b1c3d;
+      color: #fff;
+    }
+    .schedule-table tbody tr:nth-child(even) td.col-count {
+      background: #0b1c3d;
+      color: #fff;
     }
     .schedule-table td:first-child {
       font-weight: 500;
       color: #0b1c3d;
     }
     .schedule-table td.shift-east { color: #0b1c3d; font-weight: 600; }
-    .schedule-table td.shift-west { color: #1b66c9; font-weight: 600; font-style: italic; text-decoration: underline; }
+    .schedule-table td.shift-west { color: #6b9fe0; font-weight: 600; font-style: italic; }
     .schedule-table td.shift-beach { color: #0b1c3d; font-weight: 600; }
     .schedule-table td.shift-camachee { color: #6b3fcf; font-weight: 600; }
     .schedule-table td.shift-shipyard { color: #b5651d; font-weight: 600; }
-    .schedule-table td.shift-off { color: #e53935; font-weight: 700; }
+    .schedule-table td.shift-off { color: #ef6b5a; font-weight: 700; }
     .schedule-table td.shift-empty { color: #b0b5c0; }
 
     /* Totals rows */
@@ -1449,30 +1457,34 @@
         <span class="card-arrow">&rsaquo;</span>
       </a>
 
-      <a class="card card-centered" href="https://www.ndbc.noaa.gov/data/Forecasts/FZUS52.KJAX.html" target="_blank">
+      <a class="card" href="https://www.ndbc.noaa.gov/data/Forecasts/FZUS52.KJAX.html" target="_blank">
         <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 28 28" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <circle cx="14" cy="14" r="5"/>
-            <circle cx="14" cy="14" r="9" stroke-dasharray="2 3"/>
+          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
+            <circle cx="11" cy="11" r="4"/>
+            <circle cx="11" cy="11" r="7" stroke-dasharray="2 3"/>
           </svg>
         </div>
         <div class="card-body">
           <h3>NOAA (Small Craft Advisory)</h3>
+          <p>Marine forecast and advisories</p>
         </div>
+        <span class="card-arrow">&rsaquo;</span>
       </a>
 
-      <a class="card card-centered" href="https://weather.com/weather/alerts/localalerts/l/b6a59df16f59892ca3b93c81879af5a5bc9ec17102a71fa4dcdfde9989a1b034?phenomena=RP&amp;significance=S&amp;areaid=FLZ133&amp;office=KJAX&amp;etn=0044" target="_blank">
+      <a class="card" href="https://weather.com/weather/alerts/localalerts/l/b6a59df16f59892ca3b93c81879af5a5bc9ec17102a71fa4dcdfde9989a1b034?phenomena=RP&amp;significance=S&amp;areaid=FLZ133&amp;office=KJAX&amp;etn=0044" target="_blank">
         <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 28 28" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <path d="M8 18a5 5 0 0 1 1-9.9 6.5 6.5 0 0 1 12.3 3.4A4 4 0 0 1 20 20H8z" fill="none"/>
-            <circle cx="9" cy="23" r="0.5" fill="#1b66c9"/>
-            <circle cx="13" cy="23" r="0.5" fill="#1b66c9"/>
-            <circle cx="17" cy="23" r="0.5" fill="#1b66c9"/>
+          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
+            <path d="M6 14a4 4 0 0 1 1-7.9 5 5 0 0 1 9.5 2.6A3 3 0 0 1 16 15H6z" fill="none"/>
+            <circle cx="8" cy="18" r="0.5" fill="#1b66c9"/>
+            <circle cx="11" cy="18" r="0.5" fill="#1b66c9"/>
+            <circle cx="14" cy="18" r="0.5" fill="#1b66c9"/>
           </svg>
         </div>
         <div class="card-body">
           <h3>Weather Channel</h3>
+          <p>Local alerts and conditions</p>
         </div>
+        <span class="card-arrow">&rsaquo;</span>
       </a>
 
       <a class="card card-highlight" href="https://www.jotform.com/app/252968177133162" target="_blank">
@@ -1806,8 +1818,9 @@
       const d = new Date(monday + 'T00:00:00');
       const end = new Date(d);
       end.setDate(end.getDate() + 6);
-      const opts = { month: 'short', day: 'numeric' };
-      return d.toLocaleDateString('en-US', opts) + ' - ' + end.toLocaleDateString('en-US', opts);
+      const startMonth = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+      const endMonth = end.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+      return startMonth + ' ' + d.getDate() + ' — ' + endMonth + ' ' + end.getDate() + ', ' + end.getFullYear();
     }
 
     function formatDayHeader(monday, dayIdx) {
@@ -1882,7 +1895,7 @@
             const employees = teams[teamName];
             const displayName = (!teamName || teamName === 'null') ? club.name : teamName;
             const isLastTeam = teamIdx === teamNames.length - 1;
-            const weekLabel = isCurrentWeek(monday) ? 'CURRENT WEEK' : formatWeekLabel(monday).toUpperCase();
+            const weekLabel = formatWeekLabel(monday);
 
             html += '<div class="schedule-location">';
             html += '<div class="schedule-location-header">';
