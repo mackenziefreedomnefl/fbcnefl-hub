@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBC NEFL Training Schedule</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            padding: 40px;
+        }
+        
+        .location-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .location-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .location-icon {
+            font-size: 1.5rem;
+            margin-right: 12px;
+        }
+        
+        .location-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        .training-card {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: transform 0.2s;
+        }
+        
+        .training-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .training-date {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 6px;
+        }
+        
+        .training-time {
+            font-size: 0.95rem;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+        
+        .training-details {
+            color: #2d3748;
+            line-height: 1.5;
+        }
+        
+        .captain-name {
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .no-trainings {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .location-section {
+                padding: 16px;
+            }
+            
+            .training-card {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚓ FBC NEFL Training Schedule</h1>
+            <p>Upcoming Captain Training Sessions</p>
+        </div>
+        
+        <div id="content" class="loading">
+            Loading training schedule...
+        </div>
+        
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        const CALENDARS = [
+            { email: 'memberrelationsfbc@gmail.com', name: 'Training Schedule' },
+            { email: 'btg2209@gmail.com', name: 'Captain Tyler Barrus' },
+            { email: 'fbccaptben@gmail.com', name: 'Captain Ben Mullis' },
+            { email: 'captdm1946@gmail.com', name: 'Captain Dave McLean' },
+            { email: 'fbcneflcaptain@gmail.com', name: 'Captain Evan Mackenzie' },
+            { email: 'freedomrun1000@gmail.com', name: 'Captain Tony Jenkins' },
+            { email: 'stevesassa01@gmail.com', name: 'Captain Steve Sassa' },
+            { email: 'scotthsmith135@gmail.com', name: 'Captain Scott Smith' }
+        ];
+
+        const LOCATION_MAP = {
+            'Camachee': '📍 Camachee Cove (St. Augustine)',
+            'camachee': '📍 Camachee Cove (St. Augustine)',
+            'St. Augustine': '📍 Camachee Cove (St. Augustine)',
+            'Beach Marine': '📍 Beach Marine (Jacksonville Beach)',
+            'Jacksonville Beach': '📍 Beach Marine (Jacksonville Beach)',
+            'Jax Beach': '📍 Beach Marine (Jacksonville Beach)',
+            'Shipyard': '📍 Shipyard (St. Augustine)',
+            'Julington': '📍 Julington Creek',
+            'Creek': '📍 Julington Creek'
+        };
+
+        function getLocationName(summary, description, location) {
+            const text = `${summary} ${description} ${location}`.toLowerCase();
+            
+            for (let [key, name] of Object.entries(LOCATION_MAP)) {
+                if (text.includes(key.toLowerCase())) {
+                    return name;
+                }
+            }
+            
+            return '📍 Location TBD';
+        }
+
+        function isTrainingEvent(summary) {
+            if (!summary) return false;
+            const s = summary.toLowerCase();
+            return s.includes('training') || 
+                   s.includes('nmo') || 
+                   s.includes('offshore') ||
+                   s.includes('oft');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            today.setHours(0,0,0,0);
+            tomorrow.setHours(0,0,0,0);
+            const eventDate = new Date(date);
+            eventDate.setHours(0,0,0,0);
+            
+            if (eventDate.getTime() === today.getTime()) return 'Today';
+            if (eventDate.getTime() === tomorrow.getTime()) return 'Tomorrow';
+            
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function formatTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        }
+
+        function extractMemberName(summary) {
+            // Patterns: "Name- Member Name-" or "Training-Location-Member Name-"
+            const parts = summary.split('-');
+            if (parts.length >= 3) {
+                return parts[parts.length - 2].trim();
+            }
+            return '';
+        }
+
+        async function fetchCalendarEvents(calendarEmail) {
+            const calendarId = encodeURIComponent(calendarEmail);
+            const now = new Date().toISOString();
+            const twoWeeks = new Date();
+            twoWeeks.setDate(twoWeeks.getDate() + 14);
+            const maxTime = twoWeeks.toISOString();
+            
+            const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs&timeMin=${now}&timeMax=${maxTime}&singleEvents=true&orderBy=startTime`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) return [];
+                const data = await response.json();
+                return data.items || [];
+            } catch (error) {
+                console.error(`Error fetching ${calendarEmail}:`, error);
+                return [];
+            }
+        }
+
+        async function loadAllTrainings() {
+            const allEvents = [];
+            
+            for (let cal of CALENDARS) {
+                const events = await fetchCalendarEvents(cal.email);
+                events.forEach(event => {
+                    event.captainName = cal.name;
+                });
+                allEvents.push(...events);
+            }
+            
+            // Filter to only training events
+            const trainings = allEvents.filter(event => 
+                isTrainingEvent(event.summary)
+            );
+            
+            // Sort by date
+            trainings.sort((a, b) => {
+                const dateA = new Date(a.start.dateTime || a.start.date);
+                const dateB = new Date(b.start.dateTime || b.start.date);
+                return dateA - dateB;
+            });
+            
+            // Group by location
+            const byLocation = {};
+            
+            trainings.forEach(event => {
+                const location = getLocationName(
+                    event.summary || '',
+                    event.description || '',
+                    event.location || ''
+                );
+                
+                if (!byLocation[location]) {
+                    byLocation[location] = [];
+                }
+                
+                byLocation[location].push(event);
+            });
+            
+            displayTrainings(byLocation);
+        }
+
+        function displayTrainings(byLocation) {
+            const content = document.getElementById('content');
+            
+            if (Object.keys(byLocation).length === 0) {
+                content.innerHTML = '<div class="no-trainings">No upcoming trainings in the next 14 days</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            for (let [location, events] of Object.entries(byLocation)) {
+                html += `
+                    <div class="location-section">
+                        <div class="location-header">
+                            <div class="location-name">${location}</div>
+                        </div>
+                `;
+                
+                events.forEach(event => {
+                    const startDate = event.start.dateTime || event.start.date;
+                    const endDate = event.end.dateTime || event.end.date;
+                    const memberName = extractMemberName(event.summary || '');
+                    
+                    let trainingType = 'Training';
+                    if (event.summary.includes('Offshore')) trainingType = 'Offshore Training';
+                    if (event.summary.includes('New Member')) trainingType = 'New Member Training';
+                    if (event.summary.includes('Additional')) trainingType = 'Additional Training';
+                    
+                    html += `
+                        <div class="training-card">
+                            <div class="training-date">${formatDate(startDate)}</div>
+                            <div class="training-time">${formatTime(startDate)} - ${formatTime(endDate)}</div>
+                            <div class="training-details">
+                                ${memberName ? `<strong>${memberName}</strong> • ` : ''}
+                                ${trainingType} • <span class="captain-name">${event.captainName}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            content.innerHTML = html;
+            
+            const now = new Date().toLocaleString('en-US', { 
+                timeZone: 'America/New_York',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('lastUpdated').textContent = `Last updated: ${now} ET`;
+        }
+
+        // Load on page load
+        loadAllTrainings();
+        
+        // Refresh every 5 minutes
+        setInterval(loadAllTrainings, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
