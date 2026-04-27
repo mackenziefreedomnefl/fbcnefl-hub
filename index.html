@@ -2187,20 +2187,52 @@
         // Sort alphabetically by employee name (case-insensitive)
         items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
+        const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        function formatDateRanges(dates) {
+          if (!dates.length) return '';
+          const seen = new Set();
+          const sorted = dates
+            .filter(d => {
+              const k = d.month + '-' + d.day;
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            })
+            .sort((a, b) => a.month - b.month || a.day - b.day);
+          const ranges = [];
+          let cur = null;
+          for (const d of sorted) {
+            if (cur && cur.month === d.month && cur.endDay === d.day - 1) {
+              cur.endDay = d.day;
+            } else {
+              if (cur) ranges.push(cur);
+              cur = { month: d.month, startDay: d.day, endDay: d.day };
+            }
+          }
+          if (cur) ranges.push(cur);
+          return ranges.map(r => {
+            const name = MONTH_NAMES[r.month - 1];
+            return r.startDay === r.endDay ? name + ' ' + r.startDay : name + ' ' + r.startDay + '-' + r.endDay;
+          }).join(', ');
+        }
+
         let html = '';
         items.forEach(it => {
-          // Dedupe texts while preserving order
-          const seen = new Set();
-          const deduped = it.texts.filter(t => {
-            const k = t.toLowerCase();
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-          });
-          const combined = deduped.join(' · ');
+          const futureDates = it.dates.filter(d => timeOffDateMs(d) >= cutoffMs);
+          let dateText = formatDateRanges(futureDates);
+          if (!dateText) {
+            const seen = new Set();
+            const deduped = it.texts.filter(t => {
+              const k = t.toLowerCase();
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+            dateText = deduped.join(' · ');
+          }
           html += '<div class="to-summary-row">';
           html += '<span class="to-summary-name">' + escapeHtml(it.name) + '</span>';
-          html += '<span class="to-summary-dates">' + escapeHtml(combined) + '</span>';
+          html += '<span class="to-summary-dates">' + escapeHtml(dateText) + '</span>';
           html += '<span class="to-summary-when">' + it.latestWhen + '</span>';
           html += '</div>';
         });
