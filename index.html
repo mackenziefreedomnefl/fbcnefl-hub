@@ -2129,6 +2129,20 @@
           return;
         }
 
+        // Cutoff: hide requests whose dates are all in the current week or earlier.
+        // Next Monday at 00:00 local is the boundary — anything before is hidden.
+        const cutoffMs = new Date(getMonday(1) + 'T00:00:00').getTime();
+        const nowMs = Date.now();
+        function timeOffDateMs(d) {
+          const year = new Date().getFullYear();
+          let ms = new Date(year, d.month - 1, d.day).getTime();
+          // Year wasn't in the message — if the guessed date is well in the past, assume next year
+          if (ms < nowMs - 30 * 86400000) {
+            ms = new Date(year + 1, d.month - 1, d.day).getTime();
+          }
+          return ms;
+        }
+
         // Filter to likely time-off requests and clean each message
         const perMessage = raw
           .filter(m => {
@@ -2142,7 +2156,11 @@
             when: fmtSlackTime(m.ts),
             text: cleanTimeOffText(m.text),
             dates: extractDates(m.text),
-          }));
+          }))
+          .filter(m => {
+            if (m.dates.length === 0) return true;
+            return m.dates.some(d => timeOffDateMs(d) >= cutoffMs);
+          });
 
         if (perMessage.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off requests.</div>';
@@ -2169,20 +2187,52 @@
         // Sort alphabetically by employee name (case-insensitive)
         items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
+        const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        function formatDateRanges(dates) {
+          if (!dates.length) return '';
+          const seen = new Set();
+          const sorted = dates
+            .filter(d => {
+              const k = d.month + '-' + d.day;
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            })
+            .sort((a, b) => a.month - b.month || a.day - b.day);
+          const ranges = [];
+          let cur = null;
+          for (const d of sorted) {
+            if (cur && cur.month === d.month && cur.endDay === d.day - 1) {
+              cur.endDay = d.day;
+            } else {
+              if (cur) ranges.push(cur);
+              cur = { month: d.month, startDay: d.day, endDay: d.day };
+            }
+          }
+          if (cur) ranges.push(cur);
+          return ranges.map(r => {
+            const name = MONTH_NAMES[r.month - 1];
+            return r.startDay === r.endDay ? name + ' ' + r.startDay : name + ' ' + r.startDay + '-' + r.endDay;
+          }).join(', ');
+        }
+
         let html = '';
         items.forEach(it => {
-          // Dedupe texts while preserving order
-          const seen = new Set();
-          const deduped = it.texts.filter(t => {
-            const k = t.toLowerCase();
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-          });
-          const combined = deduped.join(' · ');
+          const futureDates = it.dates.filter(d => timeOffDateMs(d) >= cutoffMs);
+          let dateText = formatDateRanges(futureDates);
+          if (!dateText) {
+            const seen = new Set();
+            const deduped = it.texts.filter(t => {
+              const k = t.toLowerCase();
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+            dateText = deduped.join(' · ');
+          }
           html += '<div class="to-summary-row">';
           html += '<span class="to-summary-name">' + escapeHtml(it.name) + '</span>';
-          html += '<span class="to-summary-dates">' + escapeHtml(combined) + '</span>';
+          html += '<span class="to-summary-dates">' + escapeHtml(dateText) + '</span>';
           html += '<span class="to-summary-when">' + it.latestWhen + '</span>';
           html += '</div>';
         });
