@@ -450,6 +450,13 @@
     .schedule-table td.shift-camachee { color: #6b3fcf; font-weight: 600; }
     .schedule-table td.shift-shipyard { color: #b5651d; font-weight: 600; }
     .schedule-table td.shift-off { color: #ef6b5a; font-weight: 700; }
+    .schedule-table td.shift-pending {
+      color: #b88914;
+      background: #fff8e6;
+      font-weight: 600;
+      font-style: italic;
+      font-size: 11px;
+    }
     .schedule-table td.shift-empty { color: #b0b5c0; }
 
     /* Totals rows */
@@ -1978,6 +1985,12 @@
           const data = await schedRes.json();
           const notes = (data.schedule && data.schedule.notes) ? data.schedule.notes : '';
 
+          // Pending time-off requests covering cells in this week
+          const pendingByCell = new Set();
+          (data.pending_time_off || []).forEach(t => {
+            pendingByCell.add(t.employee_id + ':' + t.day_index);
+          });
+
           // Group employees by team
           const teams = {};
           data.employees.forEach(emp => {
@@ -2013,10 +2026,15 @@
               let rowHtml = '<tr data-name="' + emp.name.toLowerCase() + '"><td>' + emp.name + '</td>';
               for (let i = 0; i < 7; i++) {
                 const shift = (data.shifts[emp.id] && data.shifts[emp.id][i]) || '';
-                const cls = classifyShift(shift);
-                const short = shortShift(shift);
-                const shortAttr = (short && short !== shift) ? ' data-short="' + short.replace(/"/g, '&quot;') + '"' : '';
-                rowHtml += '<td class="' + cls + '"' + shortAttr + '>' + (shift || '') + '</td>';
+                const isPendingTimeOff = !shift && pendingByCell.has(emp.id + ':' + i);
+                if (isPendingTimeOff) {
+                  rowHtml += '<td class="shift-pending" data-short="Pending" title="Pending time off request">REQ PENDING</td>';
+                } else {
+                  const cls = classifyShift(shift);
+                  const short = shortShift(shift);
+                  const shortAttr = (short && short !== shift) ? ' data-short="' + short.replace(/"/g, '&quot;') + '"' : '';
+                  rowHtml += '<td class="' + cls + '"' + shortAttr + '>' + (shift || '') + '</td>';
+                }
 
                 const bucket = countShift(shift);
                 if (bucket) {
