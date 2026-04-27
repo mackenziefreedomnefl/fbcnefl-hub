@@ -362,6 +362,42 @@
     .schedule-section {
       margin-bottom: 1.5rem;
     }
+    .training-cal-wrap { width: 100%; }
+    .training-loc-hdr {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0b1c3d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 0;
+      margin: 16px 0 8px;
+      border-bottom: 2px solid #0b1c3d;
+    }
+    .training-loc-hdr:first-child { margin-top: 0; }
+    .training-evt-card {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-left: 4px solid #1a6ecf;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .training-evt-date {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1a6ecf;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 3px;
+    }
+    .training-evt-time { font-size: 13px; color: #4a5568; margin-bottom: 3px; }
+    .training-evt-detail { font-size: 13px; color: #0b1c3d; }
+    .training-empty, .training-loading {
+      text-align: center;
+      color: #6b7a94;
+      padding: 2rem;
+      font-size: 14px;
+    }
     .schedule-location {
       background: #fff;
       border: 1px solid #0b1c3d;
@@ -438,6 +474,13 @@
     .schedule-table td.shift-camachee { color: #6b3fcf; font-weight: 600; }
     .schedule-table td.shift-shipyard { color: #b5651d; font-weight: 600; }
     .schedule-table td.shift-off { color: #ef6b5a; font-weight: 700; }
+    .schedule-table td.shift-pending {
+      color: #b88914;
+      background: #fff8e6;
+      font-weight: 600;
+      font-style: italic;
+      font-size: 11px;
+    }
     .schedule-table td.shift-empty { color: #b0b5c0; }
 
     /* Totals rows */
@@ -1036,24 +1079,28 @@
       }
       .main { padding: 1.5rem 0.75rem 2rem; }
 
-      /* Schedule: horizontal scroll with sticky employee column */
-      .schedule-location { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .schedule-location-header { font-size: 12px; padding: 8px 10px; position: sticky; left: 0; }
+      /* Schedule: fit on screen without horizontal scroll */
+      .schedule-location { overflow-x: visible; }
+      .schedule-location-header { font-size: 12px; padding: 8px 10px; }
       .schedule-location-header .week-label { font-size: 10px; }
-      .schedule-table { min-width: 720px; font-size: 11px; }
+      .schedule-table { min-width: 0; font-size: 10px; table-layout: fixed; }
       .schedule-table th,
-      .schedule-table td { padding: 7px 8px; font-size: 11px; }
-      .schedule-table th:first-child,
-      .schedule-table td:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 1;
-        box-shadow: 1px 0 0 #0b1c3d;
+      .schedule-table td {
+        padding: 5px 3px;
+        font-size: 10px;
+        word-break: break-word;
+        overflow-wrap: anywhere;
       }
-      .schedule-table thead th:first-child { background: #0b1c3d; }
-      .schedule-table tbody tr:nth-child(odd) td:first-child { background: #fff; }
-      .schedule-table tbody tr:nth-child(even) td:first-child { background: #e7eaf0; }
-      .schedule-table tr.total-row td:first-child { background: #0b1c3d; }
+      .schedule-table th:first-child,
+      .schedule-table td:first-child { width: 70px; }
+      .schedule-table th.col-count,
+      .schedule-table td.col-count { display: none; }
+      /* Swap full shift text for the abbreviated form on narrow screens */
+      .schedule-table td[data-short] { font-size: 0; }
+      .schedule-table td[data-short]::before {
+        content: attr(data-short);
+        font-size: 10px;
+      }
     }
   </style>
 </head>
@@ -1074,7 +1121,6 @@
     </button>
     <div class="nav-links">
       <button class="tab-btn active" onclick="switchTab('home', this)">Home</button>
-      <button class="tab-btn" onclick="switchTab('schedule', this)">Schedule</button>
       <button class="tab-btn" onclick="switchTab('spots', this)">Spot Tracker</button>
       <button class="tab-btn" onclick="switchTab('resources', this)">Resources</button>
       <div class="nav-dropdown">
@@ -1236,6 +1282,45 @@
       <span class="sca-arrow">&rsaquo;</span>
     </a>
 
+    <!-- Schedule (entry point — opens the embedded weekly schedule + time-off feed) -->
+    <h2 class="section-title">Schedule</h2>
+    <div class="card-list">
+      <a class="card" href="#schedule" onclick="event.preventDefault();switchTab('schedule', null);">
+        <div class="card-icon" style="background: #e6f7ef;">
+          <svg viewBox="0 0 22 22" fill="none" stroke="#1a9e6d" stroke-width="1.5">
+            <rect x="3" y="4" width="16" height="15" rx="2.5"/>
+            <line x1="3" y1="9" x2="19" y2="9"/>
+            <line x1="7" y1="3" x2="7" y2="5.5"/>
+            <line x1="15" y1="3" x2="15" y2="5.5"/>
+            <rect x="8" y="12" width="3" height="3" rx="0.5" fill="#1a9e6d"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Weekly Schedule</h3>
+          <p>Current week, time-off requests, and shift change form</p>
+        </div>
+        <span class="card-arrow">&rsaquo;</span>
+      </a>
+      <a class="card" href="#training" onclick="event.preventDefault();switchTab('training', null);">
+        <div class="card-icon" style="background: #eef2ff;">
+          <svg viewBox="0 0 22 22" fill="none" stroke="#4f46e5" stroke-width="1.5">
+            <rect x="3" y="4" width="16" height="15" rx="2.5"/>
+            <line x1="3" y1="9" x2="19" y2="9"/>
+            <line x1="7" y1="3" x2="7" y2="5.5"/>
+            <line x1="15" y1="3" x2="15" y2="5.5"/>
+            <circle cx="11" cy="14" r="2.2"/>
+            <line x1="11" y1="13" x2="11" y2="14.5"/>
+            <line x1="11" y1="14.5" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Training Calendar</h3>
+          <p>Captain training sessions shared on the team calendar</p>
+        </div>
+        <span class="card-arrow">&rsaquo;</span>
+      </a>
+    </div>
+
     <!-- Daily Forms (visible to all dock staff) -->
     <h2 class="section-title">Daily Forms</h2>
     <div class="card-list">
@@ -1344,9 +1429,13 @@
 
     <!-- SCHEDULE TAB -->
     <div class="tab-panel" id="tab-schedule">
-    <h2 class="section-title">
+    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       Weekly Schedule
-      <button onclick="openShiftRequestForm()" style="margin-left:auto;background:#0b1c3d;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Request Shift Change</button>
+      <a href="https://schedule.fbcnefl.com" target="_blank" rel="noopener" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+        Edit Schedule
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+      </a>
+      <button onclick="openShiftRequestForm()" style="background:#0b1c3d;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Request Shift Change</button>
     </h2>
     <div class="schedule-section" id="scheduleSection">
       <div class="schedule-week-nav">
@@ -1373,6 +1462,20 @@
       </div>
     </div>
     </div><!-- end tab-schedule -->
+
+    <!-- TRAINING CALENDAR TAB -->
+    <div class="tab-panel" id="tab-training">
+      <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        Training Calendar
+        <a href="https://calendar.google.com/calendar/u/0/r?cid=memberrelationsfbc%40gmail.com" target="_blank" rel="noopener" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+          Open in Google Calendar
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+        </a>
+      </h2>
+      <div class="training-cal-wrap" id="training-connector">
+        <div class="training-loading">Loading training sessions…</div>
+      </div>
+    </div><!-- end tab-training -->
 
     <!-- SPOTS TAB -->
     <div class="tab-panel" id="tab-spots">
@@ -1574,23 +1677,6 @@
         <div class="card-body">
           <h3>Expense Dashboard <span class="badge badge-live">Live</span></h3>
           <p>Weekly expense reports, receipts, and mileage tracking</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-      <a class="card" href="https://schedule.fbcnefl.com" target="_blank">
-        <div class="card-icon" style="background: #e6f7ef;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1a9e6d" stroke-width="1.5">
-            <rect x="3" y="4" width="16" height="15" rx="2.5"/>
-            <line x1="3" y1="9" x2="19" y2="9"/>
-            <line x1="7" y1="3" x2="7" y2="5.5"/>
-            <line x1="15" y1="3" x2="15" y2="5.5"/>
-            <rect x="8" y="12" width="3" height="3" rx="0.5" fill="#1a9e6d"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>Schedule Tool <span class="badge badge-live">Live</span></h3>
-          <p>Staff scheduling across all five club locations</p>
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
@@ -1813,13 +1899,16 @@
     });
 
     // --- Tab navigation ---
+    let _tcLoaded = false;
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
-      btn.classList.add('active');
+      if (btn) btn.classList.add('active');
+      window.scrollTo(0, 0);
       // Close mobile nav
       document.querySelector('.nav-links').classList.remove('open');
+      if (tabId === 'training' && !_tcLoaded) { _tcLoaded = true; tcLoad(); }
     }
 
     loadNotice();
@@ -1869,6 +1958,18 @@
       return 'shift-east';
     }
 
+    // Compact form of a shift cell for narrow viewports (Camachee 9-5 -> Cam 9-5)
+    function shortShift(val) {
+      if (!val) return '';
+      return val
+        .replace(/Camachee/gi, 'Cam')
+        .replace(/Shipyard/gi, 'Ship')
+        .replace(/Beach/gi, 'Bch')
+        .replace(/req\s*off!?/gi, 'Off')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     // Count a shift toward a location-type bucket for totals rows
     function countShift(val) {
       if (!val) return null;
@@ -1905,6 +2006,12 @@
           const data = await schedRes.json();
           const notes = (data.schedule && data.schedule.notes) ? data.schedule.notes : '';
 
+          // Pending time-off requests covering cells in this week
+          const pendingByCell = new Set();
+          (data.pending_time_off || []).forEach(t => {
+            pendingByCell.add(t.employee_id + ':' + t.day_index);
+          });
+
           // Group employees by team
           const teams = {};
           data.employees.forEach(emp => {
@@ -1940,8 +2047,15 @@
               let rowHtml = '<tr data-name="' + emp.name.toLowerCase() + '"><td>' + emp.name + '</td>';
               for (let i = 0; i < 7; i++) {
                 const shift = (data.shifts[emp.id] && data.shifts[emp.id][i]) || '';
-                const cls = classifyShift(shift);
-                rowHtml += '<td class="' + cls + '">' + (shift || '') + '</td>';
+                const isPendingTimeOff = !shift && pendingByCell.has(emp.id + ':' + i);
+                if (isPendingTimeOff) {
+                  rowHtml += '<td class="shift-pending" data-short="Pending" title="Pending time off request">REQ PENDING</td>';
+                } else {
+                  const cls = classifyShift(shift);
+                  const short = shortShift(shift);
+                  const shortAttr = (short && short !== shift) ? ' data-short="' + short.replace(/"/g, '&quot;') + '"' : '';
+                  rowHtml += '<td class="' + cls + '"' + shortAttr + '>' + (shift || '') + '</td>';
+                }
 
                 const bucket = countShift(shift);
                 if (bucket) {
@@ -1966,7 +2080,7 @@
                 sum += n;
                 html += '<td>' + (n || '') + '</td>';
               }
-              html += '<td>' + sum + '</td>';
+              html += '<td class="col-count">' + sum + '</td>';
               html += '</tr>';
             });
 
@@ -2116,7 +2230,8 @@
         btn.style.cursor = 'wait';
       }
       try {
-        const res = await fetch(SCHEDULE_API + '/slack-timeoff/public?t=' + Date.now());
+        const url = SCHEDULE_API + '/slack-timeoff/public?t=' + Date.now() + (manual ? '&fresh=1' : '');
+        const res = await fetch(url);
         const data = await res.json();
         if (!data.configured) {
           feed.innerHTML = '<div class="timeoff-empty">Slack feed not configured yet. Set <code>SLACK_TIMEOFF_CHANNEL</code> on the schedule server.</div>';
@@ -2126,6 +2241,20 @@
         if (raw.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off messages.</div>';
           return;
+        }
+
+        // Cutoff: hide requests whose dates are all in the current week or earlier.
+        // Next Monday at 00:00 local is the boundary — anything before is hidden.
+        const cutoffMs = new Date(getMonday(1) + 'T00:00:00').getTime();
+        const nowMs = Date.now();
+        function timeOffDateMs(d) {
+          const year = new Date().getFullYear();
+          let ms = new Date(year, d.month - 1, d.day).getTime();
+          // Year wasn't in the message — if the guessed date is well in the past, assume next year
+          if (ms < nowMs - 30 * 86400000) {
+            ms = new Date(year + 1, d.month - 1, d.day).getTime();
+          }
+          return ms;
         }
 
         // Filter to likely time-off requests and clean each message
@@ -2141,7 +2270,11 @@
             when: fmtSlackTime(m.ts),
             text: cleanTimeOffText(m.text),
             dates: extractDates(m.text),
-          }));
+          }))
+          .filter(m => {
+            if (m.dates.length === 0) return true;
+            return m.dates.some(d => timeOffDateMs(d) >= cutoffMs);
+          });
 
         if (perMessage.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off requests.</div>';
@@ -2168,20 +2301,52 @@
         // Sort alphabetically by employee name (case-insensitive)
         items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
+        const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        function formatDateRanges(dates) {
+          if (!dates.length) return '';
+          const seen = new Set();
+          const sorted = dates
+            .filter(d => {
+              const k = d.month + '-' + d.day;
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            })
+            .sort((a, b) => a.month - b.month || a.day - b.day);
+          const ranges = [];
+          let cur = null;
+          for (const d of sorted) {
+            if (cur && cur.month === d.month && cur.endDay === d.day - 1) {
+              cur.endDay = d.day;
+            } else {
+              if (cur) ranges.push(cur);
+              cur = { month: d.month, startDay: d.day, endDay: d.day };
+            }
+          }
+          if (cur) ranges.push(cur);
+          return ranges.map(r => {
+            const name = MONTH_NAMES[r.month - 1];
+            return r.startDay === r.endDay ? name + ' ' + r.startDay : name + ' ' + r.startDay + '-' + r.endDay;
+          }).join(', ');
+        }
+
         let html = '';
         items.forEach(it => {
-          // Dedupe texts while preserving order
-          const seen = new Set();
-          const deduped = it.texts.filter(t => {
-            const k = t.toLowerCase();
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-          });
-          const combined = deduped.join(' · ');
+          const futureDates = it.dates.filter(d => timeOffDateMs(d) >= cutoffMs);
+          let dateText = formatDateRanges(futureDates);
+          if (!dateText) {
+            const seen = new Set();
+            const deduped = it.texts.filter(t => {
+              const k = t.toLowerCase();
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+            dateText = deduped.join(' · ');
+          }
           html += '<div class="to-summary-row">';
           html += '<span class="to-summary-name">' + escapeHtml(it.name) + '</span>';
-          html += '<span class="to-summary-dates">' + escapeHtml(combined) + '</span>';
+          html += '<span class="to-summary-dates">' + escapeHtml(dateText) + '</span>';
           html += '<span class="to-summary-when">' + it.latestWhen + '</span>';
           html += '</div>';
         });
@@ -2749,6 +2914,108 @@
     // Restore session if already logged in
     if (sessionStorage.getItem('fbcAdmin') === '1') {
       showAdminTools();
+    }
+  
+    // ---------- Training Calendar Connector ----------
+    const TC_KEY = 'AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs';
+    const TC_CALENDARS = [
+      { email: 'memberrelationsfbc@gmail.com', name: 'Training Schedule' },
+      { email: 'btg2209@gmail.com', name: 'Capt. Tyler Barrus' },
+      { email: 'fbccaptben@gmail.com', name: 'Capt. Ben Mullis' },
+      { email: 'captdm1946@gmail.com', name: 'Capt. Dave McLean' },
+      { email: 'fbcneflcaptain@gmail.com', name: 'Capt. Evan Mackenzie' },
+      { email: 'freedomrun1000@gmail.com', name: 'Capt. Tony Jenkins' },
+      { email: 'stevesassa01@gmail.com', name: 'Capt. Steve Sassa' },
+      { email: 'scotthsmith135@gmail.com', name: 'Capt. Scott Smith' },
+    ];
+    const TC_LOCS = {
+      'camachee': 'Camachee Cove (St. Augustine)',
+      'st. augustine': 'Camachee Cove (St. Augustine)',
+      'beach marine': 'Beach Marine (Jacksonville Beach)',
+      'jacksonville beach': 'Beach Marine (Jacksonville Beach)',
+      'jax beach': 'Beach Marine (Jacksonville Beach)',
+      'shipyard': 'Shipyard (St. Augustine)',
+      'julington': 'Julington Creek',
+    };
+    function tcLocation(summary, desc, loc) {
+      const t = (summary + ' ' + desc + ' ' + loc).toLowerCase();
+      for (const [k, v] of Object.entries(TC_LOCS)) { if (t.includes(k)) return v; }
+      return 'Location TBD';
+    }
+    function tcIsTraining(s) {
+      s = (s || '').toLowerCase();
+      return s.includes('training') || s.includes('nmo') || s.includes('offshore') || s.includes('oft');
+    }
+    function tcFmtDate(ds) {
+      const d = new Date(ds), t = new Date(), tm = new Date(t);
+      t.setHours(0,0,0,0); tm.setHours(0,0,0,0); tm.setDate(tm.getDate()+1);
+      const ed = new Date(d); ed.setHours(0,0,0,0);
+      if (ed.getTime()===t.getTime()) return 'Today';
+      if (ed.getTime()===tm.getTime()) return 'Tomorrow';
+      return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    }
+    function tcFmtTime(ds) {
+      return new Date(ds).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    }
+    function tcMember(s) {
+      const p = (s || '').split('-');
+      return p.length >= 3 ? p[p.length - 2].trim() : '';
+    }
+    async function tcFetchCal(email) {
+      const now = new Date().toISOString();
+      const max = new Date(); max.setDate(max.getDate() + 14);
+      const url = 'https://www.googleapis.com/calendar/v3/calendars/'
+        + encodeURIComponent(email)
+        + '/events?key=' + TC_KEY
+        + '&timeMin=' + now
+        + '&timeMax=' + max.toISOString()
+        + '&singleEvents=true&orderBy=startTime';
+      try { const r = await fetch(url); return r.ok ? ((await r.json()).items || []) : []; }
+      catch (e) { return []; }
+    }
+    async function tcLoad() {
+      const root = document.getElementById('training-connector');
+      if (!root) return;
+      const all = [];
+      for (const cal of TC_CALENDARS) {
+        const evts = await tcFetchCal(cal.email);
+        evts.forEach(e => { e._cap = cal.name; });
+        all.push(...evts);
+      }
+      const trainings = all
+        .filter(e => tcIsTraining(e.summary))
+        .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
+      if (!trainings.length) {
+        root.innerHTML = '<div class="training-empty">No upcoming trainings in the next 14 days.</div>';
+        return;
+      }
+      const byLoc = {};
+      for (const e of trainings) {
+        const loc = tcLocation(e.summary || '', e.description || '', e.location || '');
+        (byLoc[loc] = byLoc[loc] || []).push(e);
+      }
+      let out = '';
+      for (const [loc, evts] of Object.entries(byLoc)) {
+        out += '<div class="training-loc-hdr">' + loc + '</div>';
+        for (const e of evts) {
+          const start = e.start.dateTime || e.start.date;
+          const end = e.end.dateTime || e.end.date;
+          const member = tcMember(e.summary);
+          const s = e.summary || '';
+          let type = 'Training';
+          if (s.includes('Offshore')) type = 'Offshore Training';
+          else if (s.includes('New Member')) type = 'New Member Training';
+          else if (s.includes('Additional')) type = 'Additional Training';
+          out += '<div class="training-evt-card">'
+            + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
+            + '<div class="training-evt-time">' + tcFmtTime(start) + ' – ' + tcFmtTime(end) + '</div>'
+            + '<div class="training-evt-detail">'
+            + (member ? '<strong>' + member + '</strong> · ' : '')
+            + type + ' · <span style="color:#1a6ecf">' + e._cap + '</span>'
+            + '</div></div>';
+        }
+      }
+      root.innerHTML = out;
     }
   </script>
 
