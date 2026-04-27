@@ -2116,7 +2116,8 @@
         btn.style.cursor = 'wait';
       }
       try {
-        const res = await fetch(SCHEDULE_API + '/slack-timeoff/public?t=' + Date.now());
+        const url = SCHEDULE_API + '/slack-timeoff/public?t=' + Date.now() + (manual ? '&fresh=1' : '');
+        const res = await fetch(url);
         const data = await res.json();
         if (!data.configured) {
           feed.innerHTML = '<div class="timeoff-empty">Slack feed not configured yet. Set <code>SLACK_TIMEOFF_CHANNEL</code> on the schedule server.</div>';
