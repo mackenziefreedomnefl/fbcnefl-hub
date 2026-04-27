@@ -2154,24 +2154,9 @@
           }
         });
 
-        // Compute the earliest upcoming date per employee (for chronological sort)
-        const now = new Date();
-        const thisYear = now.getFullYear();
-        const todayMonth = now.getMonth() + 1;
-        function dateKey(d) {
-          // If the month is in the past relative to today, assume next year
-          const year = (d.month < todayMonth - 1) ? thisYear + 1 : thisYear;
-          return year * 10000 + d.month * 100 + d.day;
-        }
-        const items = Array.from(byName.values()).map(it => {
-          const keys = it.dates.map(dateKey).filter(k => !isNaN(k));
-          return { ...it, sortKey: keys.length ? Math.min(...keys) : Infinity };
-        });
-        // Sort by earliest upcoming date; fall back to latest message time if no parseable dates
-        items.sort((a, b) => {
-          if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
-          return b.latestTs - a.latestTs;
-        });
+        const items = Array.from(byName.values());
+        // Sort alphabetically by employee name (case-insensitive)
+        items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
         let html = '';
         items.forEach(it => {
