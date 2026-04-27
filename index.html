@@ -1035,6 +1035,25 @@
         border-top: 1px solid rgba(255,255,255,0.1);
       }
       .main { padding: 1.5rem 0.75rem 2rem; }
+
+      /* Schedule: horizontal scroll with sticky employee column */
+      .schedule-location { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .schedule-location-header { font-size: 12px; padding: 8px 10px; position: sticky; left: 0; }
+      .schedule-location-header .week-label { font-size: 10px; }
+      .schedule-table { min-width: 720px; font-size: 11px; }
+      .schedule-table th,
+      .schedule-table td { padding: 7px 8px; font-size: 11px; }
+      .schedule-table th:first-child,
+      .schedule-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        box-shadow: 1px 0 0 #0b1c3d;
+      }
+      .schedule-table thead th:first-child { background: #0b1c3d; }
+      .schedule-table tbody tr:nth-child(odd) td:first-child { background: #fff; }
+      .schedule-table tbody tr:nth-child(even) td:first-child { background: #e7eaf0; }
+      .schedule-table tr.total-row td:first-child { background: #0b1c3d; }
     }
   </style>
 </head>
