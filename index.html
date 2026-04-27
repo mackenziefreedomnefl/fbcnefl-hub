@@ -2129,6 +2129,20 @@
           return;
         }
 
+        // Cutoff: hide requests whose dates are all in the current week or earlier.
+        // Next Monday at 00:00 local is the boundary — anything before is hidden.
+        const cutoffMs = new Date(getMonday(1) + 'T00:00:00').getTime();
+        const nowMs = Date.now();
+        function timeOffDateMs(d) {
+          const year = new Date().getFullYear();
+          let ms = new Date(year, d.month - 1, d.day).getTime();
+          // Year wasn't in the message — if the guessed date is well in the past, assume next year
+          if (ms < nowMs - 30 * 86400000) {
+            ms = new Date(year + 1, d.month - 1, d.day).getTime();
+          }
+          return ms;
+        }
+
         // Filter to likely time-off requests and clean each message
         const perMessage = raw
           .filter(m => {
@@ -2142,7 +2156,11 @@
             when: fmtSlackTime(m.ts),
             text: cleanTimeOffText(m.text),
             dates: extractDates(m.text),
-          }));
+          }))
+          .filter(m => {
+            if (m.dates.length === 0) return true;
+            return m.dates.some(d => timeOffDateMs(d) >= cutoffMs);
+          });
 
         if (perMessage.length === 0) {
           feed.innerHTML = '<div class="timeoff-empty">No recent time-off requests.</div>';
