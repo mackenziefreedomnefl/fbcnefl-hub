@@ -2338,7 +2338,10 @@
     }
 
     // People whose posts in the channel are announcements, not time-off requests
-    const TIMEOFF_EXCLUDE_NAMES = ['mackenzie conley', 'mackenzie'];
+    // Empty by default — schedule announcements get filtered by looksLikeTimeOffRequest
+    // (the negative regex catches "posted", "schedule for", etc.). Add a name here
+    // only if a specific person *only ever* posts non-time-off messages in this channel.
+    const TIMEOFF_EXCLUDE_NAMES = [];
 
     // Heuristic: is this message clearly a time-off request (vs. a schedule announcement)?
     function looksLikeTimeOffRequest(text) {
