@@ -1449,10 +1449,16 @@
           <button class="btn-deactivate" onclick="saveNotice(false)">Hide Notice</button>
         </div>
         <button class="pin-cancel" onclick="closeNoticeEditor()" style="margin-top:0.5rem;">Cancel</button>
-        <details class="token-setup">
+        <details class="token-setup" id="ghTokenDetails">
           <summary>GitHub Token (needed to save changes)</summary>
-          <input type="password" id="ghTokenInput" placeholder="ghp_..." oninput="localStorage.setItem('ghToken',this.value)" />
-          <p style="font-size:11px;color:#8a94a6;margin-top:4px;">Create a fine-grained token at github.com with repo contents write access</p>
+          <input type="password" id="ghTokenInput" placeholder="github_pat_... or ghp_..." oninput="localStorage.setItem('ghToken',this.value)" />
+          <p style="font-size:11px;color:#8a94a6;margin-top:4px;line-height:1.4;">
+            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:#1a6ecf;">Create a fine-grained token →</a>
+            · Resource owner: <code>mackenziefreedomnefl</code>
+            · Repository: <code>fbcnefl-hub</code>
+            · Permission: <strong>Contents — Read and write</strong>.
+            Tokens expire — if you see "Bad credentials", generate a new one.
+          </p>
         </details>
         <div class="notice-status" id="noticeStatus"></div>
       </div>
@@ -2039,11 +2045,20 @@
       document.getElementById('noticeModal').classList.remove('open');
     }
 
+    function showTokenError(statusEl, msg) {
+      statusEl.innerHTML = '<strong>' + msg + '</strong><br><span style="font-size:12px;font-weight:400;">Token expired or invalid. Open the GitHub Token section below and paste a fresh fine-grained token (click the link in the help text to create one).</span>';
+      statusEl.className = 'notice-status error';
+      const det = document.getElementById('ghTokenDetails');
+      if (det) det.open = true;
+      const inp = document.getElementById('ghTokenInput');
+      if (inp) { inp.value = ''; localStorage.removeItem('ghToken'); inp.focus(); }
+    }
+
     async function saveNotice(active) {
       const token = localStorage.getItem('ghToken');
+      const statusEl = document.getElementById('noticeStatus');
       if (!token) {
-        document.getElementById('noticeStatus').textContent = 'Enter a GitHub token first (expand below)';
-        document.getElementById('noticeStatus').className = 'notice-status error';
+        showTokenError(statusEl, 'No GitHub token saved.');
         return;
       }
       const notice = {
@@ -2052,7 +2067,6 @@
         linkText: document.getElementById('noticeEditLinkText').value.trim() || 'Learn More',
         active: active
       };
-      const statusEl = document.getElementById('noticeStatus');
       statusEl.textContent = 'Saving...';
       statusEl.className = 'notice-status';
       try {
@@ -2060,6 +2074,9 @@
         const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
           headers: { 'Authorization': 'Bearer ' + token }
         });
+        if (fileRes.status === 401) { showTokenError(statusEl, 'Bad credentials.'); return; }
+        if (fileRes.status === 403) { showTokenError(statusEl, 'Token missing Contents:write permission.'); return; }
+        if (fileRes.status === 404) { showTokenError(statusEl, 'Token can\'t see this repo. Make sure it\'s scoped to fbcnefl-hub.'); return; }
         const fileData = await fileRes.json();
         // Update file
         const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
@@ -2080,9 +2097,11 @@
           statusEl.textContent = 'Saved! Changes go live in ~1 min.';
           statusEl.className = 'notice-status success';
           setTimeout(() => closeNoticeEditor(), 1500);
+        } else if (updateRes.status === 401 || updateRes.status === 403) {
+          showTokenError(statusEl, updateRes.status === 401 ? 'Bad credentials.' : 'Token missing Contents:write permission.');
         } else {
-          const err = await updateRes.json();
-          statusEl.textContent = 'Error: ' + (err.message || 'Failed to save');
+          const err = await updateRes.json().catch(() => ({}));
+          statusEl.textContent = 'Error: ' + (err.message || ('HTTP ' + updateRes.status));
           statusEl.className = 'notice-status error';
         }
       } catch (e) {
