@@ -2974,8 +2974,10 @@
     };
 
     function tcLocation(title, loc) {
-      const t = (title + ' ' + loc).toLowerCase();
-      for (const [k, v] of Object.entries(TC_LOCS)) { if (t.includes(k)) return v; }
+      const titleLower = (title || '').toLowerCase();
+      for (const [k, v] of Object.entries(TC_LOCS)) { if (titleLower.includes(k)) return v; }
+      const fullLower = (title + ' ' + loc).toLowerCase();
+      for (const [k, v] of Object.entries(TC_LOCS)) { if (fullLower.includes(k)) return v; }
       return 'Location TBD';
     }
     function tcFmtDate(ds) {
