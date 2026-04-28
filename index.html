@@ -3019,17 +3019,19 @@
           const end = e.end.dateTime || e.end.date;
           const allDay = !e.start.dateTime;
           const member = tcMember(e.summary);
-          const s = e.summary || '';
+          const s = (e.summary || '');
+          const u = s.toLowerCase();
           let type = 'Training';
-          if (s.includes('Offshore')) type = 'Offshore Training';
-          else if (s.includes('New Member')) type = 'New Member Training';
-          else if (s.includes('Additional')) type = 'Additional Training';
+          if (u.includes('offshore') || u.includes('oft')) type = 'Offshore Training';
+          else if (u.includes('new member') || u.includes('nmo')) type = 'New Member Training';
+          else if (u.includes('additional')) type = 'Additional Training';
           out += '<div class="training-evt-card">'
             + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
             + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
             + '<div class="training-evt-detail">'
             + (member ? '<strong>' + member + '</strong> · ' : '')
             + type
+            + (e._captain ? ' · <span class="training-evt-capt">' + e._captain + '</span>' : '')
             + '</div></div>';
         }
       }
