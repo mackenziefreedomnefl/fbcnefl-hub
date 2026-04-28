@@ -420,6 +420,14 @@
       background: #f5f6f8;
       border-left-color: #8a94a6;
     }
+    .training-evt-card.training-evt-cancelled {
+      opacity: 0.55;
+      border-left-color: #c0392b;
+    }
+    .training-evt-card.training-evt-cancelled .training-evt-detail,
+    .training-evt-card.training-evt-cancelled .training-evt-time {
+      text-decoration: line-through;
+    }
     .training-evt-time { font-size: 13px; color: #4a5568; margin-bottom: 2px; }
     .training-evt-detail { font-size: 13px; color: #0b1c3d; }
     .training-evt-capt { color: #6b7a94; font-size: 12px; }
@@ -3005,6 +3013,9 @@
       const u = (e.summary || '').toLowerCase();
       return u.includes('training') || /\boft\b/.test(u) || /\bnmo\b/.test(u);
     }
+    function tcIsCancelled(e) {
+      return /^\s*cancell?ed\b/i.test(e.summary || '');
+    }
     function tcDayKey(d) {
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
@@ -3012,8 +3023,10 @@
       const start = e.start.dateTime || e.start.date;
       const end = e.end.dateTime || e.end.date;
       const allDay = !e.start.dateTime;
-      const cls = isNA ? 'training-evt-card training-evt-na' : 'training-evt-card';
-      return '<div class="' + cls + '">'
+      const classes = ['training-evt-card'];
+      if (isNA) classes.push('training-evt-na');
+      if (tcIsCancelled(e)) classes.push('training-evt-cancelled');
+      return '<div class="' + classes.join(' ') + '">'
         + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
         + '<div class="training-evt-detail">'
         + (e.summary || 'Untitled')
