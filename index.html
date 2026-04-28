@@ -618,6 +618,17 @@
     }
     .training-cal-wrap { width: 100%; }
 
+    .bonus-debug {
+      margin: 6px 2px 0;
+      padding: 4px 10px;
+      background: #f4f6fa;
+      border: 1px dashed #c8cfdc;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #6b7a94;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .bonus-debug.error { background: #fff0f0; color: #b53c3c; border-color: #f0b8b8; }
     .testing-badge {
       display: inline-flex;
       align-items: center;
@@ -1805,6 +1816,7 @@
     <div id="bonusCarousel" class="bonus-carousel">
       <div class="bonus-loading">Loading bonus card submissions…</div>
     </div>
+    <div id="bonusDebug" class="bonus-debug" style="display:none;"></div>
 
     <!-- Member shoutouts (positive reviews only, from #qxreviews on Slack) -->
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -2962,23 +2974,47 @@
         const res = await fetch(url);
         if (!res.ok) {
           console.warn('[bonus] jotform fetch failed', res.status);
+          renderBonusDebug({ error: 'fetch failed: HTTP ' + res.status });
           return null;
         }
         const data = await res.json();
         if (data.responseCode !== 200) {
           console.warn('[bonus] jotform api responded', data.responseCode, data.message);
+          renderBonusDebug({ error: 'api ' + data.responseCode + ': ' + data.message });
           return null;
         }
         const all = data.content || [];
         const starred = all.filter(s => String(s.flag) === '1' || s.flag === 1);
         const items = starred.map(parseBonusJotForm).filter(Boolean);
+        const droppedNoPhoto = starred.length - items.length;
         items.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+        const summary = { total: all.length, starred: starred.length, rendered: items.length, droppedNoPhoto };
         console.log('[bonus] jotform: ' + all.length + ' total submissions, ' + starred.length + ' starred, ' + items.length + ' with photos rendered');
+        renderBonusDebug(summary);
         return items;
       } catch (e) {
         console.warn('[bonus] jotform fetch threw', e);
+        renderBonusDebug({ error: 'threw: ' + e.message });
         return null;
       }
+    }
+
+    // Show a tiny diagnostic line under the carousel for hub admins.
+    function renderBonusDebug(info) {
+      const el = document.getElementById('bonusDebug');
+      if (!el) return;
+      const isAdmin = sessionStorage.getItem('fbcAdmin') === '1';
+      if (!isAdmin) { el.style.display = 'none'; return; }
+      el.style.display = '';
+      if (info.error) {
+        el.textContent = 'Bonus debug · error: ' + info.error;
+        el.className = 'bonus-debug error';
+        return;
+      }
+      let line = 'Bonus debug · ' + info.total + ' total · ' + info.starred + ' starred · ' + info.rendered + ' rendered';
+      if (info.droppedNoPhoto > 0) line += ' · ' + info.droppedNoPhoto + ' dropped (no photo)';
+      el.textContent = line;
+      el.className = 'bonus-debug';
     }
     async function loadBonusCards() {
       let items = await fetchBonusJotForm();
