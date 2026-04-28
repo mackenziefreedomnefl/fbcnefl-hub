@@ -1,0 +1,6 @@
+{
+  "configured": true,
+  "source": "static",
+  "note": "Static fallback used when /api/bonus-cards/public on the schedule server is not yet available. Submissions go through /api/bonus-cards/upload — once that endpoint is live, items here are replaced by real submissions.",
+  "items": []
+}
