@@ -2834,7 +2834,8 @@
     }
     async function fetchBonusJotForm() {
       try {
-        const url = 'https://api.jotform.com/form/' + BONUS_JOTFORM_ID + '/submissions?apiKey=' + BONUS_JOTFORM_KEY + '&limit=30&orderby=created_at';
+        const filter = encodeURIComponent('{"flag":"1"}');
+        const url = 'https://api.jotform.com/form/' + BONUS_JOTFORM_ID + '/submissions?apiKey=' + BONUS_JOTFORM_KEY + '&limit=30&orderby=created_at&filter=' + filter;
         const res = await fetch(url);
         if (!res.ok) return null;
         const data = await res.json();
