@@ -2945,17 +2945,7 @@
     }
   
     // ---------- Training Calendar Connector ----------
-    const TC_KEY = 'AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs';
-    const TC_CALENDARS = [
-      'memberrelationsfbc@gmail.com',
-      'btg2209@gmail.com',
-      'fbccaptben@gmail.com',
-      'captdm1946@gmail.com',
-      'fbcneflcaptain@gmail.com',
-      'freedomrun1000@gmail.com',
-      'stevesassa01@gmail.com',
-      'scotthsmith135@gmail.com',
-    ];
+    const TC_API = 'https://script.google.com/macros/s/AKfycbxjQFCUMTMQGbPC_KyPGNf4g3jcks_obByUtUdVWtHcOb2-XmzJ4u39faQnSW-lu7ZxKg/exec';
 
     const TC_LOCS = {
       'camachee':          'Camachee Cove (St. Augustine)',
@@ -2991,21 +2981,20 @@
     let _tcEvents = null;
     async function tcFetchAll() {
       if (_tcEvents) return _tcEvents;
-      const now = new Date().toISOString();
-      const max = new Date(); max.setDate(max.getDate() + 60);
-      const maxStr = max.toISOString();
-      const all = [];
-      await Promise.all(TC_CALENDARS.map(async (id) => {
-        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?key=${TC_KEY}&timeMin=${now}&timeMax=${maxStr}&singleEvents=true&orderBy=startTime&maxResults=50`;
-        try {
-          const r = await fetch(url);
-          if (!r.ok) return;
-          const data = await r.json();
-          (data.items || []).forEach(e => { e._calId = id; all.push(e); });
-        } catch (e) {}
-      }));
-      all.sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
-      _tcEvents = all;
+      try {
+        const r = await fetch(TC_API);
+        if (!r.ok) { _tcEvents = []; return _tcEvents; }
+        const data = await r.json();
+        _tcEvents = (data.events || []).map(e => ({
+          summary: e.title,
+          location: e.location,
+          start: e.allDay ? { date: e.start } : { dateTime: e.start },
+          end:   e.allDay ? { date: e.end }   : { dateTime: e.end },
+          _captain: e.captain
+        }));
+      } catch (err) {
+        _tcEvents = [];
+      }
       return _tcEvents;
     }
 
