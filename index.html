@@ -2994,12 +2994,7 @@
     async function tcFetchCal(email) {
       const now = new Date().toISOString();
       const max = new Date(); max.setDate(max.getDate() + 60);
-      const url = 'https://www.googleapis.com/calendar/v3/calendars/'
-        + encodeURIComponent(email)
-        + '/events?key=' + TC_KEY
-        + '&timeMin=' + encodeURIComponent(now)
-        + '&timeMax=' + encodeURIComponent(max.toISOString())
-        + '&singleEvents=true&orderBy=startTime&maxResults=50';
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(email)}/events?key=${TC_KEY}&timeMin=${now}&timeMax=${max.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=50`;
       try { const r = await fetch(url); return r.ok ? ((await r.json()).items || []) : []; }
       catch (e) { return []; }
     }
