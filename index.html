@@ -389,35 +389,32 @@
       white-space: nowrap;
     }
     .training-cal-wrap { width: 100%; }
-    .training-loc-hdr {
-      font-size: 12px;
+    .training-day-hdr {
+      font-size: 13px;
       font-weight: 700;
       color: #0b1c3d;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 6px 0;
-      margin: 16px 0 8px;
+      padding: 8px 0;
+      margin: 20px 0 10px;
       border-bottom: 2px solid #0b1c3d;
     }
-    .training-loc-hdr:first-child { margin-top: 0; }
+    .training-day-hdr:first-child { margin-top: 0; }
     .training-evt-card {
       background: #fff;
       border: 1px solid #e2e5ec;
       border-left: 4px solid #1a6ecf;
       border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 8px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
     }
-    .training-evt-date {
-      font-size: 11px;
-      font-weight: 700;
-      color: #1a6ecf;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-bottom: 3px;
+    .training-evt-card.training-evt-na {
+      background: #f5f6f8;
+      border-left-color: #8a94a6;
     }
-    .training-evt-time { font-size: 13px; color: #4a5568; margin-bottom: 3px; }
+    .training-evt-time { font-size: 13px; color: #4a5568; margin-bottom: 2px; }
     .training-evt-detail { font-size: 13px; color: #0b1c3d; }
+    .training-evt-capt { color: #6b7a94; font-size: 12px; }
     .training-empty, .training-loading {
       text-align: center;
       color: #6b7a94;
@@ -2993,34 +2990,56 @@
       return _tcEvents;
     }
 
+    function tcIsTraining(e) {
+      const u = (e.summary || '').toLowerCase();
+      return u.includes('training') || /\boft\b/.test(u) || /\bnmo\b/.test(u);
+    }
+    function tcDayKey(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function tcEventCard(e, isNA) {
+      const start = e.start.dateTime || e.start.date;
+      const end = e.end.dateTime || e.end.date;
+      const allDay = !e.start.dateTime;
+      const cls = isNA ? 'training-evt-card training-evt-na' : 'training-evt-card';
+      return '<div class="' + cls + '">'
+        + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
+        + '<div class="training-evt-detail">'
+        + (e.summary || 'Untitled')
+        + (e._captain ? ' · <span class="training-evt-capt">' + e._captain + '</span>' : '')
+        + '</div></div>';
+    }
+
     async function tcLoad() {
       const root = document.getElementById('training-connector');
       if (!root) return;
       const events = await tcFetchAll();
       if (!events.length) {
-        root.innerHTML = '<div class="training-empty">No upcoming trainings in the next 60 days.</div>';
+        root.innerHTML = '<div class="training-empty">No upcoming events in the next 60 days.</div>';
         return;
       }
-      const byLoc = {};
+
+      const byDay = {};
       for (const e of events) {
-        const loc = tcLocation(e.summary || '', e.location || '');
-        (byLoc[loc] = byLoc[loc] || []).push(e);
+        const start = e.start.dateTime || e.start.date;
+        const sd = new Date(start);
+        const key = tcDayKey(sd);
+        (byDay[key] = byDay[key] || { date: sd, events: [] }).events.push(e);
       }
+
+      const sortedKeys = Object.keys(byDay).sort();
       let out = '';
-      for (const [loc, evts] of Object.entries(byLoc)) {
-        out += '<div class="training-loc-hdr">' + loc + '</div>';
-        for (const e of evts) {
-          const start = e.start.dateTime || e.start.date;
-          const end = e.end.dateTime || e.end.date;
-          const allDay = !e.start.dateTime;
-          out += '<div class="training-evt-card">'
-            + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
-            + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
-            + '<div class="training-evt-detail">'
-            + (e.summary || 'Untitled')
-            + (e._captain ? ' · <span class="training-evt-capt">' + e._captain + '</span>' : '')
-            + '</div></div>';
-        }
+      for (const key of sortedKeys) {
+        const day = byDay[key];
+        out += '<div class="training-day-hdr">' + tcFmtDate(day.date.toISOString()) + '</div>';
+
+        const na = day.events.filter(e => !tcIsTraining(e));
+        const tr = day.events.filter(tcIsTraining).sort((a, b) => {
+          return new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date);
+        });
+
+        for (const e of na) out += tcEventCard(e, true);
+        for (const e of tr) out += tcEventCard(e, false);
       }
       root.innerHTML = out;
     }
