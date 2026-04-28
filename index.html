@@ -2949,16 +2949,30 @@
     }
     async function fetchBonusJotForm() {
       try {
-        const filter = encodeURIComponent('{"flag":"1"}');
-        const url = 'https://api.jotform.com/form/' + BONUS_JOTFORM_ID + '/submissions?apiKey=' + BONUS_JOTFORM_KEY + '&limit=30&orderby=created_at&filter=' + filter + '&t=' + Date.now();
+        // Fetch the latest 50 submissions and filter client-side by flag (star).
+        // Server-side ?filter={"flag":"1"} can silently drop matches depending on
+        // how JotForm interprets the value type, so we do the filter ourselves.
+        const url = 'https://api.jotform.com/form/' + BONUS_JOTFORM_ID + '/submissions?apiKey=' + BONUS_JOTFORM_KEY + '&limit=50&orderby=created_at&t=' + Date.now();
         const res = await fetch(url);
-        if (!res.ok) return null;
+        if (!res.ok) {
+          console.warn('[bonus] jotform fetch failed', res.status);
+          return null;
+        }
         const data = await res.json();
-        if (data.responseCode !== 200) return null;
-        const items = (data.content || []).map(parseBonusJotForm).filter(Boolean);
+        if (data.responseCode !== 200) {
+          console.warn('[bonus] jotform api responded', data.responseCode, data.message);
+          return null;
+        }
+        const all = data.content || [];
+        const starred = all.filter(s => String(s.flag) === '1' || s.flag === 1);
+        const items = starred.map(parseBonusJotForm).filter(Boolean);
         items.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+        console.log('[bonus] jotform: ' + all.length + ' total submissions, ' + starred.length + ' starred, ' + items.length + ' with photos rendered');
         return items;
-      } catch (e) { return null; }
+      } catch (e) {
+        console.warn('[bonus] jotform fetch threw', e);
+        return null;
+      }
     }
     async function loadBonusCards() {
       let items = await fetchBonusJotForm();
