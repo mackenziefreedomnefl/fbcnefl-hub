@@ -2550,6 +2550,8 @@
       return review;
     }
 
+    const REVIEW_DAYS_WINDOW = 5;
+
     function isPositiveReview(r) {
       if (r.rating > 0) return r.rating >= 4;
       return reviewSentiment(r.comment) === 'positive';
@@ -2561,11 +2563,25 @@
       return c !== 'n/a' && c !== 'na' && c !== 'no comment' && c !== 'none' && c !== '-';
     }
 
+    function withinReviewWindow(r) {
+      const cutoff = Date.now() - REVIEW_DAYS_WINDOW * 86400000;
+      if (r.tripDate) {
+        const d = new Date(r.tripDate);
+        if (!isNaN(d.getTime())) return d.getTime() >= cutoff;
+      }
+      if (r.ts) {
+        const ms = Number(String(r.ts).split('.')[0]) * 1000;
+        if (ms) return ms >= cutoff;
+      }
+      return false;
+    }
+
     function positiveReviews(msgs) {
       return (msgs || [])
         .map(parseReview)
         .filter(isPositiveReview)
-        .filter(hasRealComment);
+        .filter(hasRealComment)
+        .filter(withinReviewWindow);
     }
 
     function renderReviewsTicker(reviews) {
@@ -2642,7 +2658,7 @@
         renderReviewsTicker(reviews);
         renderReviewsFeed(reviews);
         if (!reviews.length && feed) {
-          feed.innerHTML = '<div class="reviews-empty-feed">No member shoutouts in the past few days.</div>';
+          feed.innerHTML = '<div class="reviews-empty-feed">No positive shoutouts in the past 5 days.</div>';
         }
       } finally {
         if (manual && btn) {
