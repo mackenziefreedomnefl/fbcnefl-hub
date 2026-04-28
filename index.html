@@ -2972,7 +2972,9 @@
     }
     function tcIsTraining(s) {
       s = (s || '').toLowerCase();
-      return s.includes('training') || s.includes('nmo') || s.includes('offshore') || s.includes('oft');
+      // accept any event — these are dedicated training calendars
+      // but exclude obvious non-training calendar noise
+      return s.length > 0 && !s.includes('birthday') && !s.includes('holiday') && !s.includes('vacation');
     }
     function tcFmtDate(ds) {
       const d = new Date(ds), t = new Date(), tm = new Date(t);
@@ -2991,13 +2993,13 @@
     }
     async function tcFetchCal(email) {
       const now = new Date().toISOString();
-      const max = new Date(); max.setDate(max.getDate() + 14);
+      const max = new Date(); max.setDate(max.getDate() + 60);
       const url = 'https://www.googleapis.com/calendar/v3/calendars/'
         + encodeURIComponent(email)
         + '/events?key=' + TC_KEY
-        + '&timeMin=' + now
-        + '&timeMax=' + max.toISOString()
-        + '&singleEvents=true&orderBy=startTime';
+        + '&timeMin=' + encodeURIComponent(now)
+        + '&timeMax=' + encodeURIComponent(max.toISOString())
+        + '&singleEvents=true&orderBy=startTime&maxResults=50';
       try { const r = await fetch(url); return r.ok ? ((await r.json()).items || []) : []; }
       catch (e) { return []; }
     }
@@ -3014,7 +3016,7 @@
         .filter(e => tcIsTraining(e.summary))
         .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
       if (!trainings.length) {
-        root.innerHTML = '<div class="training-empty">No upcoming trainings in the next 14 days.</div>';
+        root.innerHTML = '<div class="training-empty">No upcoming trainings in the next 60 days.</div>';
         return;
       }
       const byLoc = {};
@@ -3060,7 +3062,7 @@
         .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date))
         .slice(0, 3);
       if (!trainings.length) {
-        preview.innerHTML = '<span class="tc-prev-none">No upcoming sessions in next 14 days</span>';
+        preview.innerHTML = '<span class="tc-prev-none">No upcoming sessions in next 60 days</span>';
         return;
       }
       preview.innerHTML = trainings.map(e => {
