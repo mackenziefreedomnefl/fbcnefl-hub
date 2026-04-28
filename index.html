@@ -279,6 +279,47 @@
       font-weight: 400;
       color: #8a94a6;
     }
+    .reviews-ticker {
+      overflow: hidden;
+      background: linear-gradient(90deg, #f7f9fc 0%, #fff 50%, #f7f9fc 100%);
+      border: 1px solid #e2e5ec;
+      border-radius: 10px;
+      padding: 10px 0;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .reviews-ticker-label {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      background: #0b1c3d;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+    .reviews-ticker-track {
+      display: inline-flex;
+      gap: 48px;
+      white-space: nowrap;
+      animation: ticker 80s linear infinite;
+      padding-left: 140px;
+    }
+    .reviews-ticker:hover .reviews-ticker-track { animation-play-state: paused; }
+    .review-item { font-size: 13px; color: #0b1c3d; display: inline-flex; align-items: center; gap: 6px; }
+    .review-item .author { font-weight: 700; color: #1a6ecf; }
+    .review-item .stars { color: #f4b400; letter-spacing: 1px; }
+    .review-item .dot { color: #cfd6e1; }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
     .back-btn {
       background: none;
       border: none;
@@ -1325,6 +1366,12 @@
     <!-- HOME TAB -->
     <div class="tab-panel active" id="tab-home">
 
+    <!-- Member Reviews ticker (from #qxreviews on Slack) -->
+    <div class="reviews-ticker" id="reviewsTicker" style="display:none;">
+      <div class="reviews-ticker-label">Member Reviews</div>
+      <div class="reviews-ticker-track" id="reviewsTickerTrack"></div>
+    </div>
+
     <!-- Small Craft Advisory Banner -->
     <a href="https://www.ndbc.noaa.gov/data/Forecasts/FZUS52.KJAX.html" target="_blank" id="scaBanner" class="sca-banner" style="display:none;">
       <div class="sca-icon">
@@ -2289,6 +2336,67 @@
     }
 
     loadTimeOff();
+
+    // --- Member Reviews (#qxreviews) ---
+    function escapeReview(s) {
+      return (s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+    function reviewStars(text) {
+      const m = (text || '').match(/(★+|⭐+|(\d)\s*\/\s*5|(\d)\s*stars?)/i);
+      if (!m) return '';
+      if (m[1] && /[★⭐]/.test(m[1])) return m[1].slice(0, 5);
+      const n = Math.min(5, Math.max(0, Number(m[2] || m[3] || 0)));
+      return n ? '★'.repeat(n) : '';
+    }
+    function reviewWhen(ts) {
+      if (!ts) return '';
+      const d = new Date(Number(String(ts).split('.')[0]) * 1000);
+      const now = new Date();
+      const diffDays = Math.floor((now - d) / 86400000);
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return diffDays + 'd ago';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function renderReviewsTicker(msgs) {
+      const ticker = document.getElementById('reviewsTicker');
+      const track = document.getElementById('reviewsTickerTrack');
+      if (!ticker || !track) return;
+      if (!msgs || !msgs.length) { ticker.style.display = 'none'; return; }
+      const items = msgs.map(m => {
+        const stars = reviewStars(m.text);
+        const author = (m.user_name || 'A member').trim();
+        const text = (m.text || '').replace(/\s+/g, ' ').trim();
+        return '<span class="review-item">'
+          + '<span class="author">' + escapeReview(author) + '</span>'
+          + (stars ? '<span class="stars">' + stars + '</span>' : '')
+          + '<span class="dot">·</span>'
+          + '<span>' + escapeReview(text) + '</span>'
+          + '</span>';
+      }).join('');
+      // Duplicate so the marquee loops seamlessly
+      track.innerHTML = items + items;
+      ticker.style.display = 'block';
+    }
+
+    async function loadReviews(manual) {
+      const ticker = document.getElementById('reviewsTicker');
+      try {
+        const url = SCHEDULE_API + '/slack-reviews/public?t=' + Date.now() + (manual ? '&fresh=1' : '');
+        const res = await fetch(url);
+        if (!res.ok) { if (ticker) ticker.style.display = 'none'; return; }
+        const data = await res.json();
+        if (!data.configured) { if (ticker) ticker.style.display = 'none'; return; }
+        renderReviewsTicker((data.messages || []).slice(0, 20));
+      } catch (err) {
+        if (ticker) ticker.style.display = 'none';
+      }
+    }
+    loadReviews();
 
     // --- Shift Change Request Form ---
     let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '', swapWeekOffset: 0 };
