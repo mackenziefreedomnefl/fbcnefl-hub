@@ -2550,7 +2550,7 @@
       return review;
     }
 
-    const REVIEW_DAYS_WINDOW = 5;
+    const REVIEW_DAYS_WINDOW = 30;
 
     function isPositiveReview(r) {
       if (r.rating > 0) return r.rating >= 4;
@@ -2658,7 +2658,7 @@
         renderReviewsTicker(reviews);
         renderReviewsFeed(reviews);
         if (!reviews.length && feed) {
-          feed.innerHTML = '<div class="reviews-empty-feed">No positive shoutouts in the past 5 days.</div>';
+          feed.innerHTML = '<div class="reviews-empty-feed">No positive shoutouts in the past 30 days.</div>';
         }
       } finally {
         if (manual && btn) {
