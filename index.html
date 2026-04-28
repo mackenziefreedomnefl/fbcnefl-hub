@@ -362,6 +362,32 @@
     .schedule-section {
       margin-bottom: 1.5rem;
     }
+    .training-card-preview {
+      font-size: 12px;
+      color: #4a5568;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .tc-prev-loading { color: #9aabb8; font-style: italic; }
+    .tc-prev-none { color: #9aabb8; font-style: italic; }
+    .tc-prev-evt {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .tc-prev-evt-date {
+      font-weight: 700;
+      color: #1a6ecf;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+    .tc-prev-evt-title {
+      color: #2d3748;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .training-cal-wrap { width: 100%; }
     .training-loc-hdr {
       font-size: 12px;
@@ -1315,7 +1341,9 @@
         </div>
         <div class="card-body">
           <h3>Training Calendar</h3>
-          <p>Captain training sessions shared on the team calendar</p>
+          <div id="training-card-preview" class="training-card-preview">
+            <span class="tc-prev-loading">Loading upcoming sessions…</span>
+          </div>
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
@@ -3017,6 +3045,34 @@
       }
       root.innerHTML = out;
     }
+
+    async function tcLoadCardPreview() {
+      const preview = document.getElementById('training-card-preview');
+      if (!preview) return;
+      const all = [];
+      for (const cal of TC_CALENDARS) {
+        const evts = await tcFetchCal(cal.email);
+        evts.forEach(e => { e._cap = cal.name; });
+        all.push(...evts);
+      }
+      const trainings = all
+        .filter(e => tcIsTraining(e.summary))
+        .sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date))
+        .slice(0, 3);
+      if (!trainings.length) {
+        preview.innerHTML = '<span class="tc-prev-none">No upcoming sessions in next 14 days</span>';
+        return;
+      }
+      preview.innerHTML = trainings.map(e => {
+        const start = e.start.dateTime || e.start.date;
+        const title = (e.summary || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.summary || 'Training';
+        return '<div class="tc-prev-evt">'
+          + '<span class="tc-prev-evt-date">' + tcFmtDate(start) + (e.start.dateTime ? ' ' + tcFmtTime(start) : '') + '</span>'
+          + '<span class="tc-prev-evt-title">' + title + '</span>'
+          + '</div>';
+      }).join('');
+    }
+    tcLoadCardPreview();
   </script>
 
 </body>
