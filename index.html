@@ -338,38 +338,47 @@
       box-shadow: 0 1px 3px rgba(11, 28, 61, 0.04);
       position: relative;
     }
-    .review-card.positive { border-left: 4px solid #1a9e6d; }
-    .review-card.negative { border-left: 4px solid #c0392b; }
-    .review-card.neutral  { border-left: 4px solid #c47f17; }
+    .review-card { border-left: 4px solid #1a9e6d; cursor: pointer; transition: box-shadow 0.15s; }
+    .review-card:hover { box-shadow: 0 4px 10px rgba(11, 28, 61, 0.08); }
+    .review-card.expanded .review-text { -webkit-line-clamp: unset; display: block; max-height: none; }
+    .review-card .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .review-card .review-author { font-weight: 700; color: #0b1c3d; font-size: 14px; }
+    .review-card .review-stars { color: #f4b400; letter-spacing: 1px; font-size: 13px; }
     .review-card .review-text {
       font-size: 14px;
       color: #0b1c3d;
       line-height: 1.5;
       margin: 4px 0 10px;
       white-space: pre-wrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    .review-card .review-meta {
+    .review-card .review-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
       font-size: 12px;
       color: #6b7a94;
-      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid #f0f2f5;
     }
-    .review-card .review-author { font-weight: 700; color: #0b1c3d; }
-    .review-card .review-stars { color: #f4b400; letter-spacing: 1px; }
-    .review-sentiment {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.4px;
+    .review-card .review-loc {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      color: #1a6ecf;
     }
-    .review-sentiment.positive { background: #e6f7ef; color: #0f6e4d; }
-    .review-sentiment.negative { background: #fce4e6; color: #8a2820; }
-    .review-sentiment.neutral  { background: #fef3e2; color: #8a5b0c; }
+    .review-card .review-date { font-variant-numeric: tabular-nums; }
     .reviews-empty-feed {
       grid-column: 1 / -1;
       text-align: center;
@@ -382,27 +391,6 @@
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 12px;
-    }
-    .reviews-filter {
-      display: inline-flex;
-      gap: 4px;
-      margin-left: auto;
-    }
-    .reviews-filter button {
-      background: #fff;
-      color: #0b1c3d;
-      border: 1px solid #e2e5ec;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .reviews-filter button.active {
-      background: #0b1c3d;
-      color: #fff;
-      border-color: #0b1c3d;
     }
     @keyframes ticker {
       from { transform: translateX(0); }
@@ -1720,19 +1708,13 @@
 
     </div>
 
-    <!-- Full member reviews list (from #qxreviews on Slack) -->
+    <!-- Member shoutouts (positive reviews only, from #qxreviews on Slack) -->
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      Member Reviews
-      <span style="font-size:12px;font-weight:500;color:#8a94a6;">from #qxreviews</span>
-      <div class="reviews-filter">
-        <button data-rfilter="all" class="active" onclick="filterReviews('all', this)">All</button>
-        <button data-rfilter="positive" onclick="filterReviews('positive', this)">Positive</button>
-        <button data-rfilter="neutral" onclick="filterReviews('neutral', this)">Neutral</button>
-        <button data-rfilter="negative" onclick="filterReviews('negative', this)">Needs Attention</button>
-      </div>
+      Member Shoutouts
+      <span style="font-size:12px;font-weight:500;color:#8a94a6;">positive reviews · #qxreviews</span>
     </h2>
     <div id="reviewsFeed" class="reviews-feed">
-      <div class="reviews-empty-feed">Loading reviews…</div>
+      <div class="reviews-empty-feed">Loading shoutouts…</div>
     </div>
 
     <div id="customCards-home" class="custom-cards-section"></div>
@@ -2511,64 +2493,100 @@
       return 'neutral';
     }
 
-    function renderReviewsTicker(msgs) {
+    function parseReview(m) {
+      const text = (m.text || '').trim();
+      const review = {
+        name: (m.user_name || '').trim(),
+        location: '',
+        tripDate: '',
+        comment: text,
+        stars: reviewStars(text),
+        ts: m.ts
+      };
+
+      const lines = text.split(/\r?\n/);
+      let extractedFields = false;
+      const commentLines = [];
+      for (const line of lines) {
+        let mm;
+        if ((mm = line.match(/^\s*(?:member|name|guest)\s*[:\-=]\s*(.+)$/i))) {
+          review.name = mm[1].trim(); extractedFields = true; continue;
+        }
+        if ((mm = line.match(/^\s*(?:location|marina|club|where|dock)\s*[:\-=]\s*(.+)$/i))) {
+          review.location = mm[1].trim(); extractedFields = true; continue;
+        }
+        if ((mm = line.match(/^\s*(?:trip\s*date|date|when|trip)\s*[:\-=]\s*(.+)$/i))) {
+          review.tripDate = mm[1].trim(); extractedFields = true; continue;
+        }
+        if ((mm = line.match(/^\s*(?:comment|review|feedback|notes?)\s*[:\-=]\s*(.+)$/i))) {
+          commentLines.push(mm[1].trim()); extractedFields = true; continue;
+        }
+        if (/^\s*(?:rating|stars?|score)\s*[:\-=]/i.test(line)) { extractedFields = true; continue; }
+        if (extractedFields && line.trim()) commentLines.push(line.trim());
+      }
+      if (commentLines.length) review.comment = commentLines.join(' ');
+
+      if (!review.location) {
+        const t = text.toLowerCase();
+        for (const [k, v] of Object.entries(TC_LOCS)) {
+          if (t.includes(k)) { review.location = v; break; }
+        }
+      }
+      if (!review.tripDate) {
+        const dm = text.match(/\b(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\b/);
+        if (dm) review.tripDate = dm[1];
+      }
+      if (!review.tripDate && m.ts) {
+        const d = new Date(Number(String(m.ts).split('.')[0]) * 1000);
+        review.tripDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      return review;
+    }
+
+    function positiveReviews(msgs) {
+      return (msgs || [])
+        .filter(m => reviewSentiment(m.text) === 'positive')
+        .map(parseReview);
+    }
+
+    function renderReviewsTicker(reviews) {
       const ticker = document.getElementById('reviewsTicker');
       const track = document.getElementById('reviewsTickerTrack');
       if (!ticker || !track) return;
-      const positive = (msgs || []).filter(m => reviewSentiment(m.text) === 'positive');
-      if (!positive.length) { ticker.style.display = 'none'; return; }
-      const items = positive.slice(0, 20).map(m => {
-        const stars = reviewStars(m.text);
-        const author = (m.user_name || 'A member').trim();
-        const text = (m.text || '').replace(/\s+/g, ' ').trim();
+      if (!reviews.length) { ticker.style.display = 'none'; return; }
+      const items = reviews.slice(0, 20).map(r => {
+        const text = (r.comment || '').replace(/\s+/g, ' ').trim();
         return '<span class="review-item">'
-          + '<span class="author">' + escapeReview(author) + '</span>'
-          + (stars ? '<span class="stars">' + stars + '</span>' : '')
+          + '<span class="author">' + escapeReview(r.name || 'A member') + '</span>'
+          + (r.stars ? '<span class="stars">' + r.stars + '</span>' : '')
           + '<span class="dot">·</span>'
           + '<span>' + escapeReview(text) + '</span>'
+          + (r.location ? '<span class="dot">·</span><span>' + escapeReview(r.location) + '</span>' : '')
           + '</span>';
       }).join('');
       track.innerHTML = items + items;
       ticker.style.display = 'block';
     }
 
-    let _reviewsAll = [];
-    let _reviewsFilter = 'all';
-
-    function renderReviewsFeed() {
+    function renderReviewsFeed(reviews) {
       const feed = document.getElementById('reviewsFeed');
       if (!feed) return;
-      const list = _reviewsFilter === 'all'
-        ? _reviewsAll
-        : _reviewsAll.filter(m => reviewSentiment(m.text) === _reviewsFilter);
-      if (!list.length) {
-        feed.innerHTML = '<div class="reviews-empty-feed">No ' + (_reviewsFilter === 'all' ? '' : _reviewsFilter + ' ') + 'reviews to show.</div>';
+      if (!reviews.length) {
+        feed.innerHTML = '<div class="reviews-empty-feed">No member shoutouts yet.</div>';
         return;
       }
-      feed.innerHTML = list.map(m => {
-        const sentiment = reviewSentiment(m.text);
-        const stars = reviewStars(m.text);
-        const author = (m.user_name || 'A member').trim();
-        const when = reviewWhen(m.ts);
-        const sentimentLabel = sentiment === 'negative' ? 'Needs Attention' : (sentiment.charAt(0).toUpperCase() + sentiment.slice(1));
-        return '<div class="review-card ' + sentiment + '">'
-          + '<div class="review-meta" style="margin-bottom:6px;">'
-          + '<span class="review-author">' + escapeReview(author) + '</span>'
-          + '<span class="review-sentiment ' + sentiment + '">' + sentimentLabel + '</span>'
+      feed.innerHTML = reviews.map(r => {
+        return '<div class="review-card" onclick="this.classList.toggle(\'expanded\')">'
+          + '<div class="review-header">'
+          + '<span class="review-author">' + escapeReview(r.name || 'A member') + '</span>'
+          + (r.stars ? '<span class="review-stars">' + r.stars + '</span>' : '<span></span>')
           + '</div>'
-          + '<div class="review-text">' + escapeReview(m.text) + '</div>'
-          + '<div class="review-meta">'
-          + '<span>' + when + '</span>'
-          + (stars ? '<span class="review-stars">' + stars + '</span>' : '<span></span>')
+          + '<div class="review-text">' + escapeReview(r.comment) + '</div>'
+          + '<div class="review-footer">'
+          + (r.location ? '<span class="review-loc">' + escapeReview(r.location) + '</span>' : '<span></span>')
+          + '<span class="review-date">' + escapeReview(r.tripDate || '') + '</span>'
           + '</div></div>';
       }).join('');
-    }
-
-    function filterReviews(kind, btn) {
-      _reviewsFilter = kind;
-      document.querySelectorAll('.reviews-filter button').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      renderReviewsFeed();
     }
 
     async function loadReviews(manual) {
@@ -2588,9 +2606,9 @@
           if (feed) feed.innerHTML = '<div class="reviews-empty-feed">Reviews feed not configured yet. Set <code>SLACK_REVIEWS_CHANNEL=qxreviews</code> on the schedule server.</div>';
           return;
         }
-        _reviewsAll = data.messages || [];
-        renderReviewsTicker(_reviewsAll);
-        renderReviewsFeed();
+        const reviews = positiveReviews(data.messages || []);
+        renderReviewsTicker(reviews);
+        renderReviewsFeed(reviews);
       } catch (err) {
         if (ticker) ticker.style.display = 'none';
         if (feed) feed.innerHTML = '<div class="reviews-empty-feed">Could not load reviews.</div>';
