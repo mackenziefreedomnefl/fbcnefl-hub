@@ -279,6 +279,14 @@
       font-weight: 400;
       color: #8a94a6;
     }
+    .training-disclosure-body {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 14px 16px;
+      margin-top: -2px;
+    }
     .reviews-ticker {
       overflow: hidden;
       background: linear-gradient(90deg, #f7f9fc 0%, #fff 50%, #f7f9fc 100%);
@@ -316,6 +324,86 @@
     .review-item .author { font-weight: 700; color: #1a6ecf; }
     .review-item .stars { color: #f4b400; letter-spacing: 1px; }
     .review-item .dot { color: #cfd6e1; }
+    .reviews-feed {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .review-card {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(11, 28, 61, 0.04);
+      position: relative;
+    }
+    .review-card.positive { border-left: 4px solid #1a9e6d; }
+    .review-card.negative { border-left: 4px solid #c0392b; }
+    .review-card.neutral  { border-left: 4px solid #c47f17; }
+    .review-card .review-text {
+      font-size: 14px;
+      color: #0b1c3d;
+      line-height: 1.5;
+      margin: 4px 0 10px;
+      white-space: pre-wrap;
+    }
+    .review-card .review-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #6b7a94;
+      flex-wrap: wrap;
+    }
+    .review-card .review-author { font-weight: 700; color: #0b1c3d; }
+    .review-card .review-stars { color: #f4b400; letter-spacing: 1px; }
+    .review-sentiment {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.4px;
+    }
+    .review-sentiment.positive { background: #e6f7ef; color: #0f6e4d; }
+    .review-sentiment.negative { background: #fce4e6; color: #8a2820; }
+    .review-sentiment.neutral  { background: #fef3e2; color: #8a5b0c; }
+    .reviews-empty-feed {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #6b7a94;
+      padding: 1.5rem;
+      font-size: 14px;
+    }
+    .reviews-empty-feed code {
+      background: #eef1f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .reviews-filter {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .reviews-filter button {
+      background: #fff;
+      color: #0b1c3d;
+      border: 1px solid #e2e5ec;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .reviews-filter button.active {
+      background: #0b1c3d;
+      color: #fff;
+      border-color: #0b1c3d;
+    }
     @keyframes ticker {
       from { transform: translateX(0); }
       to { transform: translateX(-50%); }
@@ -1407,18 +1495,38 @@
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
-    </div>
 
-    <!-- Training Calendar (inline) -->
-    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      Training Calendar
-      <button id="trainingRefreshBtn" onclick="tcRefresh()" title="Refresh" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
-        <span>Refresh</span>
-      </button>
-    </h2>
-    <div class="training-cal-wrap" id="training-connector">
-      <div class="training-loading">Loading training sessions…</div>
+      <details class="card-disclosure" id="trainingDisclosure" ontoggle="if(this.open) tcEnsureLoaded()">
+        <summary class="card">
+          <div class="card-icon" style="background: #eef2ff;">
+            <svg viewBox="0 0 22 22" fill="none" stroke="#4f46e5" stroke-width="1.5">
+              <rect x="3" y="4" width="16" height="15" rx="2.5"/>
+              <line x1="3" y1="9" x2="19" y2="9"/>
+              <line x1="7" y1="3" x2="7" y2="5.5"/>
+              <line x1="15" y1="3" x2="15" y2="5.5"/>
+              <circle cx="11" cy="14" r="2.2"/>
+              <line x1="11" y1="13" x2="11" y2="14.5"/>
+              <line x1="11" y1="14.5" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3>Training Calendar</h3>
+            <p>Click to view upcoming sessions</p>
+          </div>
+          <span class="card-arrow">&rsaquo;</span>
+        </summary>
+        <div class="training-disclosure-body">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <button id="trainingRefreshBtn" onclick="tcRefresh()" title="Refresh" style="background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div class="training-cal-wrap" id="training-connector">
+            <div class="training-loading">Loading training sessions…</div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- Forms (visible to all dock staff) -->
@@ -1610,6 +1718,21 @@
         <span class="card-arrow">&rsaquo;</span>
       </a>
 
+    </div>
+
+    <!-- Full member reviews list (from #qxreviews on Slack) -->
+    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      Member Reviews
+      <span style="font-size:12px;font-weight:500;color:#8a94a6;">from #qxreviews</span>
+      <div class="reviews-filter">
+        <button data-rfilter="all" class="active" onclick="filterReviews('all', this)">All</button>
+        <button data-rfilter="positive" onclick="filterReviews('positive', this)">Positive</button>
+        <button data-rfilter="neutral" onclick="filterReviews('neutral', this)">Neutral</button>
+        <button data-rfilter="negative" onclick="filterReviews('negative', this)">Needs Attention</button>
+      </div>
+    </h2>
+    <div id="reviewsFeed" class="reviews-feed">
+      <div class="reviews-empty-feed">Loading reviews…</div>
     </div>
 
     <div id="customCards-home" class="custom-cards-section"></div>
@@ -2362,12 +2485,39 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    const REVIEW_POSITIVE_WORDS = ['great','excellent','amazing','awesome','love','loved','wonderful','fantastic','perfect','best','recommend','professional','helpful','friendly','attentive','enjoyed','thank','thanks','pleased','happy','satisfied','outstanding','smooth','easy','clean','fun','exceptional','impressed','knowledgeable'];
+    const REVIEW_NEGATIVE_WORDS = ['terrible','awful','worst','horrible','rude','disappointed','unhappy','poor','unprofessional','dirty','broken','unsafe','frustrated','angry','complain','complaint','never again','waste','refund','issue','problem','wrong','late','cancelled','canceled'];
+
+    function reviewSentiment(text) {
+      const t = (text || '').toLowerCase();
+      if (!t) return 'neutral';
+
+      const ratingMatch = t.match(/(\d)\s*(?:\/\s*5|stars?\b)/);
+      if (ratingMatch) {
+        const n = Number(ratingMatch[1]);
+        if (n >= 4) return 'positive';
+        if (n <= 2) return 'negative';
+        return 'neutral';
+      }
+      const filledStars = (t.match(/[★⭐]/g) || []).length;
+      if (filledStars >= 4) return 'positive';
+      if (filledStars > 0 && filledStars <= 2) return 'negative';
+
+      let pos = 0, neg = 0;
+      for (const w of REVIEW_POSITIVE_WORDS) if (t.includes(w)) pos++;
+      for (const w of REVIEW_NEGATIVE_WORDS) if (t.includes(w)) neg++;
+      if (pos > neg) return 'positive';
+      if (neg > pos) return 'negative';
+      return 'neutral';
+    }
+
     function renderReviewsTicker(msgs) {
       const ticker = document.getElementById('reviewsTicker');
       const track = document.getElementById('reviewsTickerTrack');
       if (!ticker || !track) return;
-      if (!msgs || !msgs.length) { ticker.style.display = 'none'; return; }
-      const items = msgs.map(m => {
+      const positive = (msgs || []).filter(m => reviewSentiment(m.text) === 'positive');
+      if (!positive.length) { ticker.style.display = 'none'; return; }
+      const items = positive.slice(0, 20).map(m => {
         const stars = reviewStars(m.text);
         const author = (m.user_name || 'A member').trim();
         const text = (m.text || '').replace(/\s+/g, ' ').trim();
@@ -2378,22 +2528,72 @@
           + '<span>' + escapeReview(text) + '</span>'
           + '</span>';
       }).join('');
-      // Duplicate so the marquee loops seamlessly
       track.innerHTML = items + items;
       ticker.style.display = 'block';
     }
 
+    let _reviewsAll = [];
+    let _reviewsFilter = 'all';
+
+    function renderReviewsFeed() {
+      const feed = document.getElementById('reviewsFeed');
+      if (!feed) return;
+      const list = _reviewsFilter === 'all'
+        ? _reviewsAll
+        : _reviewsAll.filter(m => reviewSentiment(m.text) === _reviewsFilter);
+      if (!list.length) {
+        feed.innerHTML = '<div class="reviews-empty-feed">No ' + (_reviewsFilter === 'all' ? '' : _reviewsFilter + ' ') + 'reviews to show.</div>';
+        return;
+      }
+      feed.innerHTML = list.map(m => {
+        const sentiment = reviewSentiment(m.text);
+        const stars = reviewStars(m.text);
+        const author = (m.user_name || 'A member').trim();
+        const when = reviewWhen(m.ts);
+        const sentimentLabel = sentiment === 'negative' ? 'Needs Attention' : (sentiment.charAt(0).toUpperCase() + sentiment.slice(1));
+        return '<div class="review-card ' + sentiment + '">'
+          + '<div class="review-meta" style="margin-bottom:6px;">'
+          + '<span class="review-author">' + escapeReview(author) + '</span>'
+          + '<span class="review-sentiment ' + sentiment + '">' + sentimentLabel + '</span>'
+          + '</div>'
+          + '<div class="review-text">' + escapeReview(m.text) + '</div>'
+          + '<div class="review-meta">'
+          + '<span>' + when + '</span>'
+          + (stars ? '<span class="review-stars">' + stars + '</span>' : '<span></span>')
+          + '</div></div>';
+      }).join('');
+    }
+
+    function filterReviews(kind, btn) {
+      _reviewsFilter = kind;
+      document.querySelectorAll('.reviews-filter button').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderReviewsFeed();
+    }
+
     async function loadReviews(manual) {
       const ticker = document.getElementById('reviewsTicker');
+      const feed = document.getElementById('reviewsFeed');
       try {
         const url = SCHEDULE_API + '/slack-reviews/public?t=' + Date.now() + (manual ? '&fresh=1' : '');
         const res = await fetch(url);
-        if (!res.ok) { if (ticker) ticker.style.display = 'none'; return; }
+        if (!res.ok) {
+          if (ticker) ticker.style.display = 'none';
+          if (feed) feed.innerHTML = '<div class="reviews-empty-feed">Reviews feed not configured yet. Add an endpoint at <code>/api/slack-reviews/public</code> on the schedule server reading <code>#qxreviews</code>.</div>';
+          return;
+        }
         const data = await res.json();
-        if (!data.configured) { if (ticker) ticker.style.display = 'none'; return; }
-        renderReviewsTicker((data.messages || []).slice(0, 20));
+        if (!data.configured) {
+          if (ticker) ticker.style.display = 'none';
+          if (feed) feed.innerHTML = '<div class="reviews-empty-feed">Reviews feed not configured yet. Set <code>SLACK_REVIEWS_CHANNEL=qxreviews</code> on the schedule server.</div>';
+          return;
+        }
+        _reviewsAll = data.messages || [];
+        renderReviewsTicker(_reviewsAll);
+        renderReviewsFeed();
       } catch (err) {
         if (ticker) ticker.style.display = 'none';
+        if (feed) feed.innerHTML = '<div class="reviews-empty-feed">Could not load reviews.</div>';
       }
     }
     loadReviews();
@@ -3075,6 +3275,7 @@
       const btn = document.getElementById('trainingRefreshBtn');
       const root = document.getElementById('training-connector');
       _tcEvents = null;
+      _tcEnsuredLoaded = true;
       if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
       if (root) root.innerHTML = '<div class="training-loading">Refreshing…</div>';
       try {
@@ -3083,7 +3284,12 @@
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
       }
     }
-    tcLoad();
+    let _tcEnsuredLoaded = false;
+    function tcEnsureLoaded() {
+      if (_tcEnsuredLoaded) return;
+      _tcEnsuredLoaded = true;
+      tcLoad();
+    }
   </script>
 
 </body>
