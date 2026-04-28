@@ -400,6 +400,14 @@
       border-bottom: 2px solid #0b1c3d;
     }
     .training-day-hdr:first-child { margin-top: 0; }
+    .training-loc-hdr {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7a94;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin: 10px 0 4px;
+    }
     .training-evt-card {
       background: #fff;
       border: 1px solid #e2e5ec;
@@ -3034,12 +3042,20 @@
         out += '<div class="training-day-hdr">' + tcFmtDate(day.date.toISOString()) + '</div>';
 
         const na = day.events.filter(e => !tcIsTraining(e));
-        const tr = day.events.filter(tcIsTraining).sort((a, b) => {
-          return new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date);
-        });
+        const tr = day.events.filter(tcIsTraining);
 
         for (const e of na) out += tcEventCard(e, true);
-        for (const e of tr) out += tcEventCard(e, false);
+
+        const trByLoc = {};
+        for (const e of tr) {
+          const loc = tcLocation(e.summary || '', e.location || '');
+          (trByLoc[loc] = trByLoc[loc] || []).push(e);
+        }
+        for (const [loc, evts] of Object.entries(trByLoc)) {
+          evts.sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
+          out += '<div class="training-loc-hdr">' + loc + '</div>';
+          for (const e of evts) out += tcEventCard(e, false);
+        }
       }
       root.innerHTML = out;
     }
