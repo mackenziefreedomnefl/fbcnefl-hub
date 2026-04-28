@@ -1804,19 +1804,24 @@
 
     </div>
 
-    <!-- Bonus Cards carousel + submit -->
-    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      Bonus Cards
-      <span style="font-size:12px;font-weight:500;color:#8a94a6;">$50 to staff who turn one in</span>
-      <a href="https://form.jotform.com/261168494421055" target="_blank" rel="noopener" style="margin-left:auto;background:#0b1c3d;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Submit Bonus Card
+    <!-- Bonus Cards (simple submit-link card for now) -->
+    <h2 class="section-title">Bonus Cards</h2>
+    <div class="card-list">
+      <a class="card" href="https://form.jotform.com/261168494421055" target="_blank" rel="noopener">
+        <div class="card-icon" style="background: #fff5d6;">
+          <svg viewBox="0 0 22 22" fill="none" stroke="#b88914" stroke-width="1.5">
+            <rect x="3" y="6" width="16" height="11" rx="1.5"/>
+            <line x1="3" y1="10" x2="19" y2="10"/>
+            <line x1="6" y1="14" x2="10" y2="14"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <h3>Submit Bonus Card</h3>
+          <p>Turn one in for a $50 staff bonus</p>
+        </div>
+        <span class="card-arrow">&rsaquo;</span>
       </a>
-    </h2>
-    <div id="bonusCarousel" class="bonus-carousel">
-      <div class="bonus-loading">Loading bonus card submissions…</div>
     </div>
-    <div id="bonusDebug" class="bonus-debug" style="display:none;"></div>
 
     <!-- Member shoutouts (positive reviews only, from #qxreviews on Slack) -->
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1834,10 +1839,6 @@
     <div id="customCards-home" class="custom-cards-section"></div>
     </div><!-- end tab-home -->
 
-    <!-- Bonus card lightbox -->
-    <div id="bonusLightbox" class="bonus-lightbox" onclick="closeBonusLightbox()">
-      <img id="bonusLightboxImg" alt="" />
-    </div>
 
     <!-- SCHEDULE TAB -->
     <div class="tab-panel" id="tab-schedule">
@@ -3017,13 +3018,10 @@
       el.className = 'bonus-debug';
     }
     async function loadBonusCards() {
-      let items = await fetchBonusJotForm();
-      if (items === null) items = await fetchBonusLive();
-      if (items === null) items = await fetchBonusStatic();
-      renderBonusCards(items);
+      // Bonus card carousel disabled — submit-only card on Home now.
+      // Helpers above stay defined so future re-enable is easy.
     }
-    loadBonusCards();
-    setInterval(loadBonusCards, 5 * 60 * 1000);
+    // (carousel intentionally not loaded)
 
     function openBonusLightbox(src) {
       if (!src) return;
