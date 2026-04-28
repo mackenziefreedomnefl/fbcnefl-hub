@@ -2973,11 +2973,6 @@
     function tcFmtTime(ds) {
       return new Date(ds).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
     }
-    function tcMember(s) {
-      const p = (s || '').split('-');
-      return p.length >= 3 ? p[p.length - 2].trim() : '';
-    }
-
     let _tcEvents = null;
     async function tcFetchAll() {
       if (_tcEvents) return _tcEvents;
@@ -3018,18 +3013,12 @@
           const start = e.start.dateTime || e.start.date;
           const end = e.end.dateTime || e.end.date;
           const allDay = !e.start.dateTime;
-          const member = tcMember(e.summary);
-          const s = e.summary || '';
-          let type = 'Training';
-          if (s.includes('Offshore')) type = 'Offshore Training';
-          else if (s.includes('New Member')) type = 'New Member Training';
-          else if (s.includes('Additional')) type = 'Additional Training';
           out += '<div class="training-evt-card">'
             + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
             + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
             + '<div class="training-evt-detail">'
-            + (member ? '<strong>' + member + '</strong> · ' : '')
-            + type
+            + (e.summary || 'Untitled')
+            + (e._captain ? ' · <span class="training-evt-capt">' + e._captain + '</span>' : '')
             + '</div></div>';
         }
       }
@@ -3047,10 +3036,9 @@
       preview.innerHTML = events.slice(0, 3).map(e => {
         const start = e.start.dateTime || e.start.date;
         const allDay = !e.start.dateTime;
-        const title = (e.summary || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.summary || 'Training';
         return '<div class="tc-prev-evt">'
           + '<span class="tc-prev-evt-date">' + tcFmtDate(start) + (allDay ? '' : ' ' + tcFmtTime(start)) + '</span>'
-          + '<span class="tc-prev-evt-title">' + title + '</span>'
+          + '<span class="tc-prev-evt-title">' + (e.summary || 'Untitled') + '</span>'
           + '</div>';
       }).join('');
     }
