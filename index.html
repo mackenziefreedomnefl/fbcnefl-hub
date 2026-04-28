@@ -617,6 +617,29 @@
       white-space: nowrap;
     }
     .training-cal-wrap { width: 100%; }
+
+    .tomorrow-workers {
+      margin: -2px 0 6px;
+      padding: 10px 14px;
+      background: #f7f9fc;
+      border: 1px solid #e2e5ec;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #4a5568;
+    }
+    .tomorrow-workers .tw-title {
+      font-weight: 700;
+      color: #0b1c3d;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .tomorrow-workers .tw-row { margin: 2px 0; line-height: 1.45; }
+    .tomorrow-workers .tw-loc { font-weight: 600; color: #0b1c3d; }
+    .tomorrow-workers .tw-empty,
+    .tomorrow-workers .tw-loading,
+    .tomorrow-workers .tw-error { color: #6b7a94; font-style: italic; }
     .training-day-hdr {
       font-size: 13px;
       font-weight: 700;
@@ -1583,6 +1606,10 @@
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
+      <div class="tomorrow-workers" id="tomorrowWorkers" aria-live="polite">
+        <div class="tw-title">Tomorrow at the docks</div>
+        <div class="tw-loading">Loading…</div>
+      </div>
 
       <a class="card" href="https://form.jotform.com/252877675887079" target="_blank">
         <div class="card-icon" style="background: #fef3e2;">
@@ -2278,6 +2305,78 @@
     }
 
     loadSchedule();
+
+    // --- Tomorrow at the docks (small note under End of Day card) ---
+    const TOMORROW_LOC_LABELS = {
+      East: 'Julington Creek East',
+      West: 'Julington Creek West',
+      Shipyard: 'Shipyard',
+      Beach: 'Jacksonville Beach',
+      Camachee: 'Camachee Cove',
+    };
+    const TOMORROW_LOC_ORDER = ['East', 'West', 'Shipyard', 'Beach', 'Camachee'];
+
+    function tomorrowLocationOf(shift) {
+      if (!shift) return null;
+      const v = shift.toLowerCase();
+      if (v.includes('req off') || v === 'off' || v.startsWith('off')) return null;
+      if (v.includes('camachee')) return 'Camachee';
+      if (v.includes('shipyard')) return 'Shipyard';
+      if (v.includes('east')) return 'East';
+      if (v.includes('west')) return 'West';
+      if (v.includes('beach')) return 'Beach';
+      return null;
+    }
+
+    function tomorrowDateInfo() {
+      const t = new Date();
+      t.setHours(0, 0, 0, 0);
+      t.setDate(t.getDate() + 1);
+      const day = t.getDay();
+      const dayIdx = day === 0 ? 6 : day - 1;
+      const monday = new Date(t);
+      monday.setDate(t.getDate() - dayIdx);
+      const yyyy = monday.getFullYear();
+      const mm = String(monday.getMonth() + 1).padStart(2, '0');
+      const dd = String(monday.getDate()).padStart(2, '0');
+      return { mondayStr: yyyy + '-' + mm + '-' + dd, dayIdx, weekday: t.toLocaleDateString('en-US', { weekday: 'long' }) };
+    }
+
+    async function loadTomorrowWorkers() {
+      const wrap = document.getElementById('tomorrowWorkers');
+      if (!wrap) return;
+      const { mondayStr, dayIdx, weekday } = tomorrowDateInfo();
+      try {
+        const clubsRes = await fetch(SCHEDULE_API + '/clubs');
+        const clubs = await clubsRes.json();
+        const byLoc = { East: [], West: [], Shipyard: [], Beach: [], Camachee: [] };
+        await Promise.all(clubs.map(async club => {
+          const r = await fetch(SCHEDULE_API + '/clubs/' + club.id + '/schedule?week=' + mondayStr);
+          if (!r.ok) return;
+          const data = await r.json();
+          (data.employees || []).forEach(emp => {
+            const shift = (data.shifts && data.shifts[emp.id] && data.shifts[emp.id][dayIdx]) || '';
+            const loc = tomorrowLocationOf(shift);
+            if (loc && byLoc[loc]) byLoc[loc].push(emp.name);
+          });
+        }));
+        let html = '<div class="tw-title">Tomorrow at the docks · ' + weekday + '</div>';
+        let any = false;
+        for (const key of TOMORROW_LOC_ORDER) {
+          const names = byLoc[key];
+          if (names.length) {
+            any = true;
+            names.sort();
+            html += '<div class="tw-row"><span class="tw-loc">' + TOMORROW_LOC_LABELS[key] + ':</span> ' + names.join(', ') + '</div>';
+          }
+        }
+        if (!any) html += '<div class="tw-empty">No one scheduled tomorrow yet.</div>';
+        wrap.innerHTML = html;
+      } catch (err) {
+        wrap.innerHTML = '<div class="tw-title">Tomorrow at the docks</div><div class="tw-error">Unable to load tomorrow\'s schedule.</div>';
+      }
+    }
+    loadTomorrowWorkers();
 
     // Enter key submits admin login
     document.getElementById('adminPassInput').addEventListener('keydown', function(e) {
