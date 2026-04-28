@@ -2744,6 +2744,8 @@
     setInterval(() => loadReviews(false), 5 * 60 * 1000);
 
     // --- Bonus Card carousel + submission ---
+    const BONUS_JOTFORM_ID = '261168494421055';
+    const BONUS_JOTFORM_KEY = '92e23cef840781bc8c5ae202871a9b73';
     function escapeBonus(s) {
       return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
@@ -2793,8 +2795,58 @@
         return data.items || [];
       } catch (e) { return []; }
     }
+    function parseBonusJotForm(sub) {
+      const item = {
+        id: sub.id,
+        photo_url: '',
+        staff_name: '',
+        member_name: '',
+        marina: '',
+        card_num: '',
+        notes: '',
+        submitted_at: sub.created_at
+      };
+      const answers = sub.answers || {};
+      for (const k in answers) {
+        const a = answers[k];
+        if (!a) continue;
+        const label = ((a.text || a.name || '') + '').toLowerCase();
+        const ans = a.answer;
+        const isFile = a.type === 'control_fileupload' || (Array.isArray(ans) && ans[0] && /\.(jpe?g|png|gif|webp|heic)(\?|$)/i.test(ans[0]));
+        if (isFile) {
+          const url = Array.isArray(ans) ? ans[0] : ans;
+          if (url) item.photo_url = url;
+          continue;
+        }
+        let text = '';
+        if (typeof ans === 'string') text = ans;
+        else if (ans && typeof ans === 'object') {
+          text = ((ans.first || '') + ' ' + (ans.last || '')).trim() || ans.value || '';
+        }
+        if (!text) continue;
+        if (!item.staff_name && (label.includes('your name') || label.includes('staff') || label.includes('submitter'))) item.staff_name = text;
+        else if (!item.member_name && label.includes('member')) item.member_name = text;
+        else if (!item.marina && (label.includes('marina') || label.includes('location'))) item.marina = text;
+        else if (!item.card_num && (label.includes('card #') || label.includes('card number') || label.includes('card'))) item.card_num = text;
+        else if (!item.notes && (label.includes('note') || label.includes('comment'))) item.notes = text;
+      }
+      return item.photo_url ? item : null;
+    }
+    async function fetchBonusJotForm() {
+      try {
+        const url = 'https://api.jotform.com/form/' + BONUS_JOTFORM_ID + '/submissions?apiKey=' + BONUS_JOTFORM_KEY + '&limit=30&orderby=created_at';
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.responseCode !== 200) return null;
+        const items = (data.content || []).map(parseBonusJotForm).filter(Boolean);
+        items.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+        return items;
+      } catch (e) { return null; }
+    }
     async function loadBonusCards() {
-      let items = await fetchBonusLive();
+      let items = await fetchBonusJotForm();
+      if (items === null) items = await fetchBonusLive();
       if (items === null) items = await fetchBonusStatic();
       renderBonusCards(items);
     }
