@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Calendar - FBC NEFL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b1c3d;
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3b9eff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2b8ae6;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #3b9eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .location-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .location-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #0b1c3d;
+        }
+
+        .location-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0b1c3d;
+        }
+
+        .training-card {
+            background: #f7fafc;
+            border-left: 4px solid #3b9eff;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: transform 0.2s;
+        }
+
+        .training-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .training-date {
+            font-weight: 600;
+            color: #3b9eff;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .training-time {
+            font-size: 0.95rem;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .training-details {
+            color: #2d3748;
+            line-height: 1.5;
+        }
+
+        .captain-name {
+            color: #3b9eff;
+            font-weight: 500;
+        }
+
+        .no-trainings {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-style: italic;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .last-updated {
+            text-align: center;
+            margin-top: 30px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .error {
+            background: #fff0f0;
+            border: 2px solid #fcc;
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .location-section {
+                padding: 16px;
+            }
+            
+            .training-card {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚓ Training Calendar</h1>
+            <p>Captain Training Sessions - FBC NEFL</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshCalendar()" id="refreshBtn">
+                🔄 Refresh Calendar
+            </button>
+            <a href="https://fbcnefl.com" class="btn" style="background:#fff;color:#0b1c3d;text-decoration:none;">
+                ← Back to Hub
+            </a>
+        </div>
+        
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Click "Refresh Calendar" to load upcoming training sessions</div>
+            </div>
+        </div>
+        
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        const LOCATION_MAP = {
+            'Camachee': '📍 Camachee Cove (St. Augustine)',
+            'camachee': '📍 Camachee Cove (St. Augustine)',
+            'St. Augustine': '📍 Camachee Cove (St. Augustine)',
+            'Beach Marine': '📍 Beach Marine (Jacksonville Beach)',
+            'Jacksonville Beach': '📍 Beach Marine (Jacksonville Beach)',
+            'Jax Beach': '📍 Beach Marine (Jacksonville Beach)',
+            'Shipyard': '📍 Shipyard (St. Augustine)',
+            'Julington': '📍 Julington Creek',
+            'Creek': '📍 Julington Creek'
+        };
+
+        function getLocationName(text) {
+            const t = text.toLowerCase();
+            for (let [key, name] of Object.entries(LOCATION_MAP)) {
+                if (t.includes(key.toLowerCase())) {
+                    return name;
+                }
+            }
+            return '📍 Location TBD';
+        }
+
+        async function refreshCalendar() {
+            const content = document.getElementById('content');
+            const btn = document.getElementById('refreshBtn');
+            const lastUpdated = document.getElementById('lastUpdated');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Loading...';
+            
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>Fetching training events from Google Calendar...</div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 4000,
+                        messages: [{
+                            role: 'user',
+                            content: `Use Google Calendar tools to list all training events from memberrelationsfbc@gmail.com for the next 14 days. Return ONLY a JSON array with no other text:
+[
+  {
+    "title": "event title",
+    "date": "Apr 28",
+    "time": "2:00 PM - 3:00 PM",
+    "location": "location",
+    "member": "member name if in title"
+  }
+]
+
+If no events, return []`
+                        }],
+                        mcp_servers: [{
+                            type: "url",
+                            url: "https://calendarmcp.googleapis.com/mcp/v1",
+                            name: "google-calendar"
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                let events = [];
+                for (const item of data.content) {
+                    if (item.type === 'text') {
+                        const text = item.text.trim();
+                        try {
+                            const cleaned = text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+                            const parsed = JSON.parse(cleaned);
+                            if (Array.isArray(parsed)) {
+                                events = parsed;
+                                break;
+                            }
+                        } catch (e) {
+                            // Not JSON, continue
+                        }
+                    }
+                }
+
+                displayEvents(events);
+                
+                const now = new Date();
+                lastUpdated.textContent = `Last updated: ${now.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                })} ET`;
+
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        <strong>⚠️ Error loading calendar</strong><br>
+                        ${error.message}
+                        <br><br>
+                        Please try again or contact support.
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Refresh Calendar';
+            }
+        }
+
+        function displayEvents(events) {
+            const content = document.getElementById('content');
+            
+            if (!events || events.length === 0) {
+                content.innerHTML = `
+                    <div class="no-trainings">
+                        📅 No upcoming training sessions in the next 14 days
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by location
+            const byLocation = {};
+            events.forEach(event => {
+                const location = getLocationName(event.title + ' ' + (event.location || ''));
+                if (!byLocation[location]) {
+                    byLocation[location] = [];
+                }
+                byLocation[location].push(event);
+            });
+
+            let html = '';
+            for (let [location, evts] of Object.entries(byLocation)) {
+                html += `
+                    <div class="location-section">
+                        <div class="location-header">
+                            <div class="location-name">${location}</div>
+                        </div>
+                `;
+                
+                evts.forEach(event => {
+                    html += `
+                        <div class="training-card">
+                            <div class="training-date">${event.date}</div>
+                            <div class="training-time">${event.time}</div>
+                            <div class="training-details">
+                                ${event.member ? `<strong>${event.member}</strong> • ` : ''}
+                                Training
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            content.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

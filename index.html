@@ -362,6 +362,32 @@
     .schedule-section {
       margin-bottom: 1.5rem;
     }
+    .training-card-preview {
+      font-size: 12px;
+      color: #4a5568;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .tc-prev-loading { color: #9aabb8; font-style: italic; }
+    .tc-prev-none { color: #9aabb8; font-style: italic; }
+    .tc-prev-evt {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .tc-prev-evt-date {
+      font-weight: 700;
+      color: #1a6ecf;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+    .tc-prev-evt-title {
+      color: #2d3748;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .training-cal-wrap { width: 100%; }
     .training-loc-hdr {
       font-size: 12px;
@@ -1315,7 +1341,9 @@
         </div>
         <div class="card-body">
           <h3>Training Calendar</h3>
-          <p>Captain training sessions shared on the team calendar</p>
+          <div id="training-card-preview" class="training-card-preview">
+            <span class="tc-prev-loading">Loading upcoming sessions…</span>
+          </div>
         </div>
         <span class="card-arrow">&rsaquo;</span>
       </a>
@@ -2917,23 +2945,32 @@
     }
   
     // ---------- Training Calendar Connector ----------
+    const TC_KEY = 'AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs';
+    const TC_CALENDARS = [
+      'memberrelationsfbc@gmail.com',
+      'btg2209@gmail.com',
+      'fbccaptben@gmail.com',
+      'captdm1946@gmail.com',
+      'fbcneflcaptain@gmail.com',
+      'freedomrun1000@gmail.com',
+      'stevesassa01@gmail.com',
+      'scotthsmith135@gmail.com',
+    ];
+
     const TC_LOCS = {
-      'camachee': 'Camachee Cove (St. Augustine)',
-      'st. augustine': 'Camachee Cove (St. Augustine)',
-      'beach marine': 'Beach Marine (Jacksonville Beach)',
-      'jacksonville beach': 'Beach Marine (Jacksonville Beach)',
-      'jax beach': 'Beach Marine (Jacksonville Beach)',
-      'shipyard': 'Shipyard (St. Augustine)',
-      'julington': 'Julington Creek',
+      'camachee':          'Camachee Cove (St. Augustine)',
+      'st. augustine':     'Camachee Cove (St. Augustine)',
+      'beach marine':      'Beach Marine (Jacksonville Beach)',
+      'jacksonville beach':'Beach Marine (Jacksonville Beach)',
+      'jax beach':         'Beach Marine (Jacksonville Beach)',
+      'shipyard':          'Shipyard (St. Augustine)',
+      'julington':         'Julington Creek',
     };
+
     function tcLocation(title, loc) {
-      const t = (title + ' ' + (loc || '')).toLowerCase();
+      const t = (title + ' ' + loc).toLowerCase();
       for (const [k, v] of Object.entries(TC_LOCS)) { if (t.includes(k)) return v; }
       return 'Location TBD';
-    }
-    function tcIsTraining(s) {
-      s = (s || '').toLowerCase();
-      return s.includes('training') || s.includes('nmo') || s.includes('offshore') || s.includes('oft');
     }
     function tcFmtDate(ds) {
       const d = new Date(ds), t = new Date(), tm = new Date(t);
@@ -2954,43 +2991,56 @@
     let _tcEvents = null;
     async function tcFetchAll() {
       if (_tcEvents) return _tcEvents;
-      try {
-        const r = await fetch(SCHEDULE_API + '/training-calendar');
-        if (!r.ok) return [];
-        const data = await r.json();
-        _tcEvents = data.events || [];
-      } catch (e) { _tcEvents = []; }
+      const now = new Date().toISOString();
+      const max = new Date(); max.setDate(max.getDate() + 60);
+      const maxStr = max.toISOString();
+      const all = [];
+      await Promise.all(TC_CALENDARS.map(async (id) => {
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?key=${TC_KEY}&timeMin=${now}&timeMax=${maxStr}&singleEvents=true&orderBy=startTime&maxResults=50`;
+        try {
+          const r = await fetch(url);
+          if (!r.ok) return;
+          const data = await r.json();
+          (data.items || []).forEach(e => { e._calId = id; all.push(e); });
+        } catch (e) {}
+      }));
+      all.sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
+      _tcEvents = all;
       return _tcEvents;
     }
+
     async function tcLoad() {
       const root = document.getElementById('training-connector');
       if (!root) return;
       const events = await tcFetchAll();
       if (!events.length) {
-        root.innerHTML = '<div class="training-empty">No upcoming trainings — check back soon.</div>';
+        root.innerHTML = '<div class="training-empty">No upcoming trainings in the next 60 days.</div>';
         return;
       }
       const byLoc = {};
       for (const e of events) {
-        const loc = tcLocation(e.title || '', e.location || '');
+        const loc = tcLocation(e.summary || '', e.location || '');
         (byLoc[loc] = byLoc[loc] || []).push(e);
       }
       let out = '';
       for (const [loc, evts] of Object.entries(byLoc)) {
         out += '<div class="training-loc-hdr">' + loc + '</div>';
         for (const e of evts) {
-          const member = tcMember(e.title);
-          const s = e.title || '';
+          const start = e.start.dateTime || e.start.date;
+          const end = e.end.dateTime || e.end.date;
+          const allDay = !e.start.dateTime;
+          const member = tcMember(e.summary);
+          const s = e.summary || '';
           let type = 'Training';
           if (s.includes('Offshore')) type = 'Offshore Training';
           else if (s.includes('New Member')) type = 'New Member Training';
           else if (s.includes('Additional')) type = 'Additional Training';
           out += '<div class="training-evt-card">'
-            + '<div class="training-evt-date">' + tcFmtDate(e.start) + '</div>'
-            + '<div class="training-evt-time">' + (e.allDay ? 'All day' : tcFmtTime(e.start) + ' – ' + tcFmtTime(e.end)) + '</div>'
+            + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
+            + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
             + '<div class="training-evt-detail">'
             + (member ? '<strong>' + member + '</strong> · ' : '')
-            + type + ' · <span style="color:#1a6ecf">' + (e.captain || '') + '</span>'
+            + type
             + '</div></div>';
         }
       }
@@ -3002,13 +3052,15 @@
       if (!preview) return;
       const events = await tcFetchAll();
       if (!events.length) {
-        preview.innerHTML = '<span class="tc-prev-none">No upcoming sessions</span>';
+        preview.innerHTML = '<span class="tc-prev-none">No upcoming sessions in next 60 days</span>';
         return;
       }
       preview.innerHTML = events.slice(0, 3).map(e => {
-        const title = (e.title || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.title || 'Training';
+        const start = e.start.dateTime || e.start.date;
+        const allDay = !e.start.dateTime;
+        const title = (e.summary || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.summary || 'Training';
         return '<div class="tc-prev-evt">'
-          + '<span class="tc-prev-evt-date">' + tcFmtDate(e.start) + (e.allDay ? '' : ' ' + tcFmtTime(e.start)) + '</span>'
+          + '<span class="tc-prev-evt-date">' + tcFmtDate(start) + (allDay ? '' : ' ' + tcFmtTime(start)) + '</span>'
           + '<span class="tc-prev-evt-title">' + title + '</span>'
           + '</div>';
       }).join('');
