@@ -2944,9 +2944,18 @@
       showAdminTools();
     }
   
-    // ---------- Training Calendar Connector (Google Apps Script) ----------
-    // Replace the URL below with your deployed Apps Script web app URL
-    const TC_GAS_URL = SCHEDULE_API + '/training-calendar';
+    // ---------- Training Calendar Connector ----------
+    const TC_KEY = 'AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs';
+    const TC_CALENDARS = [
+      'memberrelationsfbc@gmail.com',
+      'btg2209@gmail.com',
+      'fbccaptben@gmail.com',
+      'captdm1946@gmail.com',
+      'fbcneflcaptain@gmail.com',
+      'freedomrun1000@gmail.com',
+      'stevesassa01@gmail.com',
+      'scotthsmith135@gmail.com',
+    ];
 
     const TC_LOCS = {
       'camachee':          'Camachee Cove (St. Augustine)',
@@ -2982,14 +2991,22 @@
     let _tcEvents = null;
     async function tcFetchAll() {
       if (_tcEvents) return _tcEvents;
-      if (!TC_GAS_URL || TC_GAS_URL.startsWith('PASTE')) return [];
-      try {
-        const r = await fetch(TC_GAS_URL);
-        if (!r.ok) return [];
-        const data = await r.json();
-        _tcEvents = data.events || [];
-        return _tcEvents;
-      } catch (e) { return []; }
+      const now = new Date().toISOString();
+      const max = new Date(); max.setDate(max.getDate() + 60);
+      const maxStr = max.toISOString();
+      const all = [];
+      await Promise.all(TC_CALENDARS.map(async (id) => {
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?key=${TC_KEY}&timeMin=${now}&timeMax=${maxStr}&singleEvents=true&orderBy=startTime&maxResults=50`;
+        try {
+          const r = await fetch(url);
+          if (!r.ok) return;
+          const data = await r.json();
+          (data.items || []).forEach(e => { e._calId = id; all.push(e); });
+        } catch (e) {}
+      }));
+      all.sort((a, b) => new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date));
+      _tcEvents = all;
+      return _tcEvents;
     }
 
     async function tcLoad() {
@@ -3002,25 +3019,28 @@
       }
       const byLoc = {};
       for (const e of events) {
-        const loc = tcLocation(e.title || '', e.location || '');
+        const loc = tcLocation(e.summary || '', e.location || '');
         (byLoc[loc] = byLoc[loc] || []).push(e);
       }
       let out = '';
       for (const [loc, evts] of Object.entries(byLoc)) {
         out += '<div class="training-loc-hdr">' + loc + '</div>';
         for (const e of evts) {
-          const member = tcMember(e.title);
-          const s = e.title || '';
+          const start = e.start.dateTime || e.start.date;
+          const end = e.end.dateTime || e.end.date;
+          const allDay = !e.start.dateTime;
+          const member = tcMember(e.summary);
+          const s = e.summary || '';
           let type = 'Training';
           if (s.includes('Offshore')) type = 'Offshore Training';
           else if (s.includes('New Member')) type = 'New Member Training';
           else if (s.includes('Additional')) type = 'Additional Training';
           out += '<div class="training-evt-card">'
-            + '<div class="training-evt-date">' + tcFmtDate(e.start) + '</div>'
-            + '<div class="training-evt-time">' + (e.allDay ? 'All day' : tcFmtTime(e.start) + ' – ' + tcFmtTime(e.end)) + '</div>'
+            + '<div class="training-evt-date">' + tcFmtDate(start) + '</div>'
+            + '<div class="training-evt-time">' + (allDay ? 'All day' : tcFmtTime(start) + ' – ' + tcFmtTime(end)) + '</div>'
             + '<div class="training-evt-detail">'
             + (member ? '<strong>' + member + '</strong> · ' : '')
-            + type + ' · <span style="color:#1a6ecf">' + e.captain + '</span>'
+            + type
             + '</div></div>';
         }
       }
@@ -3036,9 +3056,11 @@
         return;
       }
       preview.innerHTML = events.slice(0, 3).map(e => {
-        const title = (e.title || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.title || 'Training';
+        const start = e.start.dateTime || e.start.date;
+        const allDay = !e.start.dateTime;
+        const title = (e.summary || '').replace(/^[^-]+-/, '').replace(/-[^-]*$/, '').trim() || e.summary || 'Training';
         return '<div class="tc-prev-evt">'
-          + '<span class="tc-prev-evt-date">' + tcFmtDate(e.start) + (e.allDay ? '' : ' ' + tcFmtTime(e.start)) + '</span>'
+          + '<span class="tc-prev-evt-date">' + tcFmtDate(start) + (allDay ? '' : ' ' + tcFmtTime(start)) + '</span>'
           + '<span class="tc-prev-evt-title">' + title + '</span>'
           + '</div>';
       }).join('');
