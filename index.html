@@ -1712,6 +1712,10 @@
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       Member Shoutouts
       <span style="font-size:12px;font-weight:500;color:#8a94a6;">positive reviews · #qxreviews</span>
+      <button id="reviewsRefreshBtn" onclick="loadReviews(true)" title="Refresh" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
+        <span>Refresh</span>
+      </button>
     </h2>
     <div id="reviewsFeed" class="reviews-feed">
       <div class="reviews-empty-feed">Loading shoutouts…</div>
@@ -2625,16 +2629,31 @@
     async function loadReviews(manual) {
       const ticker = document.getElementById('reviewsTicker');
       const feed = document.getElementById('reviewsFeed');
-      let messages = await fetchReviewsLive(manual);
-      if (messages === null) messages = await fetchReviewsStatic();
-      const reviews = positiveReviews(messages);
-      renderReviewsTicker(reviews);
-      renderReviewsFeed(reviews);
-      if (!reviews.length && feed) {
-        feed.innerHTML = '<div class="reviews-empty-feed">No member shoutouts yet. Paste recent #qxreviews messages into <code>reviews.json</code> or hook up the live feed.</div>';
+      const btn = document.getElementById('reviewsRefreshBtn');
+      if (manual && btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'wait';
+      }
+      try {
+        let messages = await fetchReviewsLive(manual);
+        if (messages === null) messages = await fetchReviewsStatic();
+        const reviews = positiveReviews(messages);
+        renderReviewsTicker(reviews);
+        renderReviewsFeed(reviews);
+        if (!reviews.length && feed) {
+          feed.innerHTML = '<div class="reviews-empty-feed">No member shoutouts in the past few days.</div>';
+        }
+      } finally {
+        if (manual && btn) {
+          btn.disabled = false;
+          btn.style.opacity = '';
+          btn.style.cursor = '';
+        }
       }
     }
     loadReviews();
+    setInterval(() => loadReviews(false), 5 * 60 * 1000);
 
     // --- Shift Change Request Form ---
     let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '', swapWeekOffset: 0 };
