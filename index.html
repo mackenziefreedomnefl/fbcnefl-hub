@@ -1449,17 +1449,6 @@
           <button class="btn-deactivate" onclick="saveNotice(false)">Hide Notice</button>
         </div>
         <button class="pin-cancel" onclick="closeNoticeEditor()" style="margin-top:0.5rem;">Cancel</button>
-        <details class="token-setup" id="ghTokenDetails">
-          <summary>GitHub Token (needed to save changes)</summary>
-          <input type="password" id="ghTokenInput" placeholder="github_pat_... or ghp_..." oninput="localStorage.setItem('ghToken',this.value)" />
-          <p style="font-size:11px;color:#8a94a6;margin-top:4px;line-height:1.4;">
-            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:#1a6ecf;">Create a fine-grained token →</a>
-            · Resource owner: <code>mackenziefreedomnefl</code>
-            · Repository: <code>fbcnefl-hub</code>
-            · Permission: <strong>Contents — Read and write</strong>.
-            Tokens expire — if you see "Bad credentials", generate a new one.
-          </p>
-        </details>
         <div class="notice-status" id="noticeStatus"></div>
       </div>
     </div>
@@ -1967,11 +1956,35 @@
       if (ADMIN_ACCOUNTS[email] && ADMIN_ACCOUNTS[email] === pass) {
         sessionStorage.setItem('fbcAdmin', '1');
         sessionStorage.setItem('fbcAdminEmail', email);
+        // Same value doubles as the hub editor key when posting to schedule API
+        sessionStorage.setItem('fbcHubKey', pass);
         showAdminTools();
       } else {
         document.getElementById('adminLoginError').style.display = 'block';
         document.getElementById('adminPassInput').value = '';
         document.getElementById('adminPassInput').focus();
+      }
+    }
+
+    // Commit a JSON file to the fbcnefl-hub repo via the schedule server
+    // (which holds the GitHub token). Throws on failure.
+    async function commitHubFile(path, contentObj, commitMessage) {
+      const key = sessionStorage.getItem('fbcHubKey');
+      if (!key) throw new Error('Sign in first');
+      const body = {
+        path,
+        content: btoa(JSON.stringify(contentObj, null, 2) + '\n'),
+        message: commitMessage,
+      };
+      const res = await fetch(SCHEDULE_API + '/hub-files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-hub-key': key },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 401) throw new Error('Server rejected hub key (HUB_EDITOR_KEY mismatch)');
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e.error || ('Server error ' + res.status)) + (e.detail ? ': ' + e.detail : ''));
       }
     }
 
@@ -2036,7 +2049,6 @@
       document.getElementById('noticeEditText').value = currentNotice.text || '';
       document.getElementById('noticeEditLink').value = currentNotice.link || '';
       document.getElementById('noticeEditLinkText').value = currentNotice.linkText || '';
-      document.getElementById('ghTokenInput').value = localStorage.getItem('ghToken') || '';
       document.getElementById('noticeStatus').textContent = '';
       document.getElementById('noticeModal').classList.add('open');
     }
@@ -2045,22 +2057,8 @@
       document.getElementById('noticeModal').classList.remove('open');
     }
 
-    function showTokenError(statusEl, msg) {
-      statusEl.innerHTML = '<strong>' + msg + '</strong><br><span style="font-size:12px;font-weight:400;">Token expired or invalid. Open the GitHub Token section below and paste a fresh fine-grained token (click the link in the help text to create one).</span>';
-      statusEl.className = 'notice-status error';
-      const det = document.getElementById('ghTokenDetails');
-      if (det) det.open = true;
-      const inp = document.getElementById('ghTokenInput');
-      if (inp) { inp.value = ''; localStorage.removeItem('ghToken'); inp.focus(); }
-    }
-
     async function saveNotice(active) {
-      const token = localStorage.getItem('ghToken');
       const statusEl = document.getElementById('noticeStatus');
-      if (!token) {
-        showTokenError(statusEl, 'No GitHub token saved.');
-        return;
-      }
       const notice = {
         text: document.getElementById('noticeEditText').value.trim(),
         link: document.getElementById('noticeEditLink').value.trim(),
@@ -2070,40 +2068,13 @@
       statusEl.textContent = 'Saving...';
       statusEl.className = 'notice-status';
       try {
-        // Get current file SHA
-        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (fileRes.status === 401) { showTokenError(statusEl, 'Bad credentials.'); return; }
-        if (fileRes.status === 403) { showTokenError(statusEl, 'Token missing Contents:write permission.'); return; }
-        if (fileRes.status === 404) { showTokenError(statusEl, 'Token can\'t see this repo. Make sure it\'s scoped to fbcnefl-hub.'); return; }
-        const fileData = await fileRes.json();
-        // Update file
-        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + NOTICE_PATH, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: active ? 'Update notice: ' + notice.text.substring(0, 50) : 'Hide notice',
-            content: btoa(JSON.stringify(notice, null, 2) + '\n'),
-            sha: fileData.sha
-          })
-        });
-        if (updateRes.ok) {
-          currentNotice = notice;
-          renderNotice(notice);
-          statusEl.textContent = 'Saved! Changes go live in ~1 min.';
-          statusEl.className = 'notice-status success';
-          setTimeout(() => closeNoticeEditor(), 1500);
-        } else if (updateRes.status === 401 || updateRes.status === 403) {
-          showTokenError(statusEl, updateRes.status === 401 ? 'Bad credentials.' : 'Token missing Contents:write permission.');
-        } else {
-          const err = await updateRes.json().catch(() => ({}));
-          statusEl.textContent = 'Error: ' + (err.message || ('HTTP ' + updateRes.status));
-          statusEl.className = 'notice-status error';
-        }
+        const message = active ? 'Update notice: ' + notice.text.substring(0, 50) : 'Hide notice';
+        await commitHubFile(NOTICE_PATH, notice, message);
+        currentNotice = notice;
+        renderNotice(notice);
+        statusEl.textContent = 'Saved! Changes go live in ~1 min.';
+        statusEl.className = 'notice-status success';
+        setTimeout(() => closeNoticeEditor(), 1500);
       } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
         statusEl.className = 'notice-status error';
@@ -3424,16 +3395,11 @@
     }
 
     async function saveCard() {
-      const token = localStorage.getItem('ghToken');
-      if (!token) {
-        document.getElementById('cardStatus').textContent = 'Set your GitHub token first (Admin > Create Notification > expand token setup)';
-        document.getElementById('cardStatus').className = 'card-status error';
-        return;
-      }
       const heading = document.getElementById('cardHeading').value.trim();
+      const statusEl = document.getElementById('cardStatus');
       if (!heading) {
-        document.getElementById('cardStatus').textContent = 'Heading is required';
-        document.getElementById('cardStatus').className = 'card-status error';
+        statusEl.textContent = 'Heading is required';
+        statusEl.className = 'card-status error';
         return;
       }
       const newCard = {
@@ -3443,42 +3409,17 @@
         link: document.getElementById('cardLink').value.trim(),
         created: new Date().toISOString()
       };
-
-      const statusEl = document.getElementById('cardStatus');
       statusEl.textContent = 'Saving...';
       statusEl.className = 'card-status';
-
       try {
-        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const fileData = await fileRes.json();
-        const existing = JSON.parse(atob(fileData.content));
+        const existing = (customCards || []).slice();
         existing.push(newCard);
-
-        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: 'Add card: ' + heading,
-            content: btoa(JSON.stringify(existing, null, 2) + '\n'),
-            sha: fileData.sha
-          })
-        });
-        if (updateRes.ok) {
-          customCards = existing;
-          renderCustomCards();
-          statusEl.textContent = 'Card created! Live in ~1 min.';
-          statusEl.className = 'card-status success';
-          setTimeout(() => closeCardCreator(), 1500);
-        } else {
-          const err = await updateRes.json();
-          statusEl.textContent = 'Error: ' + (err.message || 'Failed to save');
-          statusEl.className = 'card-status error';
-        }
+        await commitHubFile(CARDS_PATH, existing, 'Add card: ' + heading);
+        customCards = existing;
+        renderCustomCards();
+        statusEl.textContent = 'Card created! Live in ~1 min.';
+        statusEl.className = 'card-status success';
+        setTimeout(() => closeCardCreator(), 1500);
       } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
         statusEl.className = 'card-status error';
@@ -3487,33 +3428,12 @@
 
     async function deleteCard(index) {
       if (!confirm('Delete this card?')) return;
-      const token = localStorage.getItem('ghToken');
-      if (!token) { alert('Set your GitHub token first'); return; }
       try {
-        const fileRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const fileData = await fileRes.json();
-        const existing = JSON.parse(atob(fileData.content));
+        const existing = (customCards || []).slice();
         const removed = existing.splice(index, 1);
-        const updateRes = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CARDS_PATH, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: 'Remove card: ' + (removed[0] ? removed[0].heading : ''),
-            content: btoa(JSON.stringify(existing, null, 2) + '\n'),
-            sha: fileData.sha
-          })
-        });
-        if (updateRes.ok) {
-          customCards = existing;
-          renderCustomCards();
-        } else {
-          alert('Failed to delete card');
-        }
+        await commitHubFile(CARDS_PATH, existing, 'Remove card: ' + (removed[0] ? removed[0].heading : ''));
+        customCards = existing;
+        renderCustomCards();
       } catch (e) {
         alert('Error: ' + e.message);
       }
