@@ -392,6 +392,97 @@
       border-radius: 4px;
       font-size: 12px;
     }
+    .bonus-carousel {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding: 4px 2px 14px;
+      margin-bottom: 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bonus-carousel::-webkit-scrollbar { height: 6px; }
+    .bonus-carousel::-webkit-scrollbar-thumb { background: #cfd6e1; border-radius: 3px; }
+    .bonus-card-tile {
+      flex: 0 0 240px;
+      scroll-snap-align: start;
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(11, 28, 61, 0.04);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .bonus-card-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(11, 28, 61, 0.08); }
+    .bonus-card-tile img {
+      display: block;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #f0f2f5;
+    }
+    .bonus-card-meta { padding: 10px 12px 12px; }
+    .bonus-card-member { font-weight: 700; color: #0b1c3d; font-size: 14px; margin-bottom: 2px; }
+    .bonus-card-sub { font-size: 12px; color: #6b7a94; display: flex; justify-content: space-between; gap: 6px; }
+    .bonus-card-marina { color: #1a6ecf; font-weight: 600; }
+    .bonus-loading, .bonus-empty {
+      flex: 1;
+      text-align: center;
+      color: #6b7a94;
+      padding: 1.5rem;
+      font-size: 14px;
+    }
+    .bonus-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 28, 61, 0.55);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .bonus-modal {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 460px;
+      padding: 22px 22px 18px;
+      box-shadow: 0 20px 60px rgba(11, 28, 61, 0.25);
+    }
+    .bonus-modal .form-field { margin-bottom: 12px; }
+    .bonus-modal .form-field label { display: block; font-size: 12px; font-weight: 600; color: #6b7a94; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .bonus-modal .form-field input[type=text],
+    .bonus-modal .form-field input[type=file],
+    .bonus-modal .form-field select,
+    .bonus-modal .form-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1.5px solid #e2e5ec;
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+      background: #fff;
+    }
+    .bonus-modal .form-field input:focus,
+    .bonus-modal .form-field select:focus,
+    .bonus-modal .form-field textarea:focus { border-color: #1a6ecf; }
+    .bonus-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+    .bonus-lightbox.open { display: flex; }
+    .bonus-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
     @keyframes ticker {
       from { transform: translateX(0); }
       to { transform: translateX(-50%); }
@@ -1708,6 +1799,70 @@
 
     </div>
 
+    <!-- Bonus Cards carousel + submit -->
+    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      Bonus Cards
+      <span style="font-size:12px;font-weight:500;color:#8a94a6;">$50 to staff who turn one in</span>
+      <button onclick="openBonusUpload()" style="margin-left:auto;background:#0b1c3d;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Submit Bonus Card
+      </button>
+    </h2>
+    <div id="bonusCarousel" class="bonus-carousel">
+      <div class="bonus-loading">Loading bonus card submissions…</div>
+    </div>
+
+    <!-- Bonus Card submission modal -->
+    <div id="bonusModal" class="bonus-modal-backdrop" style="display:none;" onclick="if(event.target===this)closeBonusUpload()">
+      <div class="bonus-modal">
+        <h2 style="margin:0 0 6px;">Submit a Bonus Card</h2>
+        <p style="color:#6b7a94;font-size:13px;margin:0 0 16px;">Snap a photo of the bonus card. You'll get a $50 push once we receive the email notification.</p>
+        <form id="bonusForm" onsubmit="submitBonusUpload(event)">
+          <div class="form-field">
+            <label>Photo of the bonus card</label>
+            <input type="file" id="bonusPhoto" name="photo" accept="image/*" capture="environment" required onchange="previewBonusPhoto(this)" />
+            <img id="bonusPhotoPreview" style="display:none;max-width:100%;max-height:240px;margin-top:10px;border-radius:8px;border:1px solid #e2e5ec;" />
+          </div>
+          <div class="form-field">
+            <label>Your name</label>
+            <input type="text" id="bonusStaffName" name="staff_name" placeholder="Who's submitting" required />
+          </div>
+          <div class="form-field">
+            <label>Member name</label>
+            <input type="text" id="bonusMemberName" name="member_name" placeholder="Who handed it in" required />
+          </div>
+          <div class="form-field">
+            <label>Marina</label>
+            <select id="bonusMarina" name="marina" required>
+              <option value="">Select marina…</option>
+              <option>Camachee Cove</option>
+              <option>Beach Marine</option>
+              <option>Shipyard</option>
+              <option>Julington Creek East</option>
+              <option>Julington Creek West</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Card # <span style="font-weight:400;color:#8a94a6;">(2 cards per location, 1–10)</span></label>
+            <select id="bonusCardNum" name="card_num">
+              <option value="">Optional</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+              <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Notes <span style="font-weight:400;color:#8a94a6;">(optional)</span></label>
+            <textarea id="bonusNotes" name="notes" rows="2" placeholder="Anything we should know"></textarea>
+          </div>
+          <div id="bonusFormStatus" style="font-size:13px;margin:8px 0;display:none;"></div>
+          <div class="btn-row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+            <button type="button" onclick="closeBonusUpload()" style="background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
+            <button type="submit" id="bonusSubmitBtn" style="background:#0b1c3d;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Member shoutouts (positive reviews only, from #qxreviews on Slack) -->
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       Member Shoutouts
@@ -1723,6 +1878,11 @@
 
     <div id="customCards-home" class="custom-cards-section"></div>
     </div><!-- end tab-home -->
+
+    <!-- Bonus card lightbox -->
+    <div id="bonusLightbox" class="bonus-lightbox" onclick="closeBonusLightbox()">
+      <img id="bonusLightboxImg" alt="" />
+    </div>
 
     <!-- SCHEDULE TAB -->
     <div class="tab-panel" id="tab-schedule">
@@ -2670,6 +2830,128 @@
     }
     loadReviews();
     setInterval(() => loadReviews(false), 5 * 60 * 1000);
+
+    // --- Bonus Card carousel + submission ---
+    function escapeBonus(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function bonusFmtDate(s) {
+      if (!s) return '';
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return s;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function renderBonusCards(items) {
+      const carousel = document.getElementById('bonusCarousel');
+      if (!carousel) return;
+      if (!items || !items.length) {
+        carousel.innerHTML = '<div class="bonus-empty">No bonus cards turned in yet. Be the first!</div>';
+        return;
+      }
+      carousel.innerHTML = items.map(it => {
+        const photo = it.photo_url || '';
+        const member = it.member_name || 'Unknown member';
+        const marina = it.marina || '';
+        const date = bonusFmtDate(it.submitted_at || it.date || '');
+        return '<div class="bonus-card-tile" onclick="openBonusLightbox(\'' + escapeBonus(photo) + '\')">'
+          + '<img src="' + escapeBonus(photo) + '" alt="Bonus card from ' + escapeBonus(member) + '" loading="lazy" />'
+          + '<div class="bonus-card-meta">'
+          + '<div class="bonus-card-member">' + escapeBonus(member) + '</div>'
+          + '<div class="bonus-card-sub">'
+          + '<span class="bonus-card-marina">' + escapeBonus(marina) + '</span>'
+          + '<span>' + escapeBonus(date) + '</span>'
+          + '</div></div></div>';
+      }).join('');
+    }
+
+    async function fetchBonusLive() {
+      try {
+        const res = await fetch(SCHEDULE_API + '/bonus-cards/public?t=' + Date.now());
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data.configured) return null;
+        return data.items || [];
+      } catch (e) { return null; }
+    }
+    async function fetchBonusStatic() {
+      try {
+        const res = await fetch('bonus-cards.json?t=' + Date.now());
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.items || [];
+      } catch (e) { return []; }
+    }
+    async function loadBonusCards() {
+      let items = await fetchBonusLive();
+      if (items === null) items = await fetchBonusStatic();
+      renderBonusCards(items);
+    }
+    loadBonusCards();
+    setInterval(loadBonusCards, 5 * 60 * 1000);
+
+    function openBonusUpload() {
+      const modal = document.getElementById('bonusModal');
+      if (modal) modal.style.display = 'flex';
+    }
+    function closeBonusUpload() {
+      const modal = document.getElementById('bonusModal');
+      if (modal) modal.style.display = 'none';
+      const form = document.getElementById('bonusForm');
+      if (form) form.reset();
+      const preview = document.getElementById('bonusPhotoPreview');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      const status = document.getElementById('bonusFormStatus');
+      if (status) { status.style.display = 'none'; status.textContent = ''; }
+    }
+    function previewBonusPhoto(input) {
+      const preview = document.getElementById('bonusPhotoPreview');
+      if (!preview || !input.files || !input.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+      reader.readAsDataURL(input.files[0]);
+    }
+    async function submitBonusUpload(ev) {
+      ev.preventDefault();
+      const status = document.getElementById('bonusFormStatus');
+      const submitBtn = document.getElementById('bonusSubmitBtn');
+      const form = document.getElementById('bonusForm');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+      status.style.display = 'none';
+      try {
+        const fd = new FormData(form);
+        const res = await fetch(SCHEDULE_API + '/bonus-cards/upload', {
+          method: 'POST',
+          body: fd
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          throw new Error('Server returned ' + res.status + (errText ? ': ' + errText : ''));
+        }
+        status.style.display = 'block';
+        status.style.color = '#0f6e4d';
+        status.textContent = 'Submitted — your $50 will be on the way after we review the photo.';
+        setTimeout(() => { closeBonusUpload(); loadBonusCards(); }, 1800);
+      } catch (err) {
+        status.style.display = 'block';
+        status.style.color = '#c0392b';
+        status.textContent = 'Upload failed: ' + err.message + '. The bonus-cards endpoint may not be configured yet.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+      }
+    }
+    function openBonusLightbox(src) {
+      if (!src) return;
+      const lb = document.getElementById('bonusLightbox');
+      const img = document.getElementById('bonusLightboxImg');
+      if (img) img.src = src;
+      if (lb) lb.classList.add('open');
+    }
+    function closeBonusLightbox() {
+      const lb = document.getElementById('bonusLightbox');
+      if (lb) lb.classList.remove('open');
+    }
 
     // --- Shift Change Request Form ---
     let shiftReqState = { reason: '', dates: [], swapWith: '', swapWithId: null, details: '', swapWeekOffset: 0 };
