@@ -1,0 +1,17 @@
+{
+  "configured": true,
+  "source": "static",
+  "note": "Static fallback used when the live /api/slack-reviews/public endpoint on the schedule server is not yet available. Update by pasting new #qxreviews messages into the messages array.",
+  "messages": [
+    {
+      "user_name": "QXsurveys",
+      "ts": "1745596800.000000",
+      "text": ":boat: New Post-Trip Survey\nMember: David Bein\nBoat: Lando's Wave III- 239 Bowrider\nLocation: Jacksonville Beach\nDate: 2026-04-25\nReservation: R-3967880\nCheck-in Staff: Brandon Lanier\nCheck-out Staff: Brandon McSwigan\nQ1 Overall: Extremely satisfied\nQ2 (Why): \"N/A\"\nQ3 Breakdown:\nStaff Helpfulness: Extremely satisfied\nCheckout Efficiency: Extremely satisfied\nBoat Preparation: Extremely satisfied\nBoat Condition: Satisfied\nBoat Cleanliness: Extremely satisfied\nBoat Functionality: Extremely satisfied"
+    },
+    {
+      "user_name": "QXsurveys",
+      "ts": "1744646400.000000",
+      "text": ":boat: New Post-Trip Survey\nMember: Mike Mancuso\nBoat: (904) Happy Hour V- Offshore CC 239\nLocation: Jacksonville Beach\nDate: 2026-04-14\nReservation: R-4173998\nCheck-in Staff: Brandon McSwigan\nCheck-out Staff: Brandon Lanier\nQ1 Overall: Extremely satisfied\nQ2 (Why): \"Great that we can now go out until sunset during the weekdays! Thank you! Team at JAX beach was amazing\"\nQ3 Breakdown:\nStaff Helpfulness: Extremely satisfied\nCheckout Efficiency: Extremely satisfied\nBoat Preparation: Extremely satisfied\nBoat Condition: Extremely satisfied\nBoat Cleanliness: Extremely satisfied\nBoat Functionality: Extremely satisfied"
+    }
+  ]
+}
