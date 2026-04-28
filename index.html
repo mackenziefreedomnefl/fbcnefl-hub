@@ -244,6 +244,56 @@
     .card-highlight:hover { border-color: #7ab4fc; }
 
     /* News card */
+    .card-disclosure { margin-bottom: 12px; }
+    .card-disclosure > summary {
+      list-style: none;
+      cursor: pointer;
+      margin-bottom: 0;
+    }
+    .card-disclosure > summary::-webkit-details-marker { display: none; }
+    .card-disclosure[open] > summary .card-arrow { transform: rotate(90deg); }
+    .card-arrow { transition: transform 0.15s ease; }
+    .card-submenu {
+      background: #fff;
+      border: 1px solid #e2e5ec;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      margin-top: -2px;
+      padding: 4px 0;
+    }
+    .card-submenu .submenu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px 12px 64px;
+      color: #0b1c3d;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-top: 1px solid #f0f2f5;
+    }
+    .card-submenu .submenu-item:first-child { border-top: none; }
+    .card-submenu .submenu-item:hover { background: #f5f7fa; }
+    .card-submenu .submenu-sub {
+      font-size: 12px;
+      font-weight: 400;
+      color: #8a94a6;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: #1a6ecf;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      margin-bottom: 4px;
+      font-family: inherit;
+    }
+    .back-btn:hover { color: #0b1c3d; }
     .card-news { align-items: flex-start; }
     .card-news .card-body h3 {
       font-size: 14px;
@@ -1160,7 +1210,6 @@
     </button>
     <div class="nav-links">
       <button class="tab-btn active" onclick="switchTab('home', this)">Home</button>
-      <button class="tab-btn" onclick="switchTab('spots', this)">Spot Tracker</button>
       <button class="tab-btn" onclick="switchTab('resources', this)">Resources</button>
       <div class="nav-dropdown">
         <button class="tab-btn" onclick="switchTab('admin', this)">Admin &#9662;</button>
@@ -1244,7 +1293,6 @@
           <label>Which tab should it go on?</label>
           <select id="cardTab">
             <option value="home">Home</option>
-            <option value="spots">Spot Tracker</option>
             <option value="resources" selected>Resources</option>
           </select>
         </div>
@@ -1463,6 +1511,31 @@
         <span class="card-arrow">&rsaquo;</span>
       </a>
 
+      <details class="card-disclosure">
+        <summary class="card">
+          <div class="card-icon" style="background: #e6f7ef;">
+            <svg viewBox="0 0 22 22" fill="none" stroke="#1a9e6d" stroke-width="1.5">
+              <circle cx="11" cy="9" r="3"/>
+              <path d="M11 12v5"/>
+              <path d="M7 20h8"/>
+              <circle cx="11" cy="9" r="7" stroke-dasharray="2 2.5"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3>Spot Tracker</h3>
+            <p>GPS device feeds — pick a location</p>
+          </div>
+          <span class="card-arrow">&rsaquo;</span>
+        </summary>
+        <div class="card-submenu">
+          <a class="submenu-item" href="https://spot.freedomboatclub.ai" target="_blank">SPOT Tracker Hub <span class="submenu-sub">All feeds</span></a>
+          <a class="submenu-item" href="https://maps.findmespot.com/s/GTY9#history/assets" target="_blank">Camachee</a>
+          <a class="submenu-item" href="https://maps.findmespot.com/s/4S2Z#history/assets" target="_blank">Shipyard</a>
+          <a class="submenu-item" href="https://maps.findmespot.com/s/LFPG#history/assets" target="_blank">Julington Creek</a>
+          <a class="submenu-item" href="https://maps.findmespot.com/s/B4K5#history/assets" target="_blank">Jacksonville Beach</a>
+        </div>
+      </details>
+
     </div>
 
     <div id="customCards-home" class="custom-cards-section"></div>
@@ -1470,6 +1543,10 @@
 
     <!-- SCHEDULE TAB -->
     <div class="tab-panel" id="tab-schedule">
+    <button class="back-btn" onclick="switchTab('home', null)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to Home
+    </button>
     <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       Weekly Schedule
       <a href="https://schedule.fbcnefl.com" target="_blank" rel="noopener" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
@@ -1506,6 +1583,10 @@
 
     <!-- TRAINING CALENDAR TAB -->
     <div class="tab-panel" id="tab-training">
+      <button class="back-btn" onclick="switchTab('home', null)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back to Home
+      </button>
       <h2 class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         Training Calendar
         <button id="trainingRefreshBtn" onclick="tcRefresh()" title="Refresh" style="margin-left:auto;background:#fff;color:#0b1c3d;border:1px solid #e2e5ec;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;">
@@ -1517,90 +1598,6 @@
         <div class="training-loading">Loading training sessions…</div>
       </div>
     </div><!-- end tab-training -->
-
-    <!-- SPOTS TAB -->
-    <div class="tab-panel" id="tab-spots">
-
-    <!-- GPS Devices -->
-    <h2 class="section-title">GPS Devices</h2>
-    <div class="card-list">
-
-      <a class="card" href="https://spot.freedomboatclub.ai" target="_blank">
-        <div class="card-icon" style="background: #e6f7ef;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1a9e6d" stroke-width="1.5">
-            <circle cx="11" cy="9" r="3"/>
-            <path d="M11 12v5"/>
-            <path d="M7 20h8"/>
-            <circle cx="11" cy="9" r="7" stroke-dasharray="2 2.5"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>SPOT Tracker Hub</h3>
-          <p>All GPS device feeds — spot.freedomboatclub.ai</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-      <a class="card" href="https://maps.findmespot.com/s/GTY9#history/assets" target="_blank">
-        <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <path d="M11 2C7.7 2 5 4.7 5 8c0 5 6 12 6 12s6-7 6-12c0-3.3-2.7-6-6-6z"/>
-            <circle cx="11" cy="8" r="2" fill="#1b66c9"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>Camachee</h3>
-          <p>SPOT GPS feed</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-      <a class="card" href="https://maps.findmespot.com/s/4S2Z#history/assets" target="_blank">
-        <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <path d="M11 2C7.7 2 5 4.7 5 8c0 5 6 12 6 12s6-7 6-12c0-3.3-2.7-6-6-6z"/>
-            <circle cx="11" cy="8" r="2" fill="#1b66c9"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>Shipyard</h3>
-          <p>SPOT GPS feed</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-      <a class="card" href="https://maps.findmespot.com/s/LFPG#history/assets" target="_blank">
-        <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <path d="M11 2C7.7 2 5 4.7 5 8c0 5 6 12 6 12s6-7 6-12c0-3.3-2.7-6-6-6z"/>
-            <circle cx="11" cy="8" r="2" fill="#1b66c9"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>Julington Creek</h3>
-          <p>SPOT GPS feed</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-      <a class="card" href="https://maps.findmespot.com/s/B4K5#history/assets" target="_blank">
-        <div class="card-icon" style="background: #e8f0fe;">
-          <svg viewBox="0 0 22 22" fill="none" stroke="#1b66c9" stroke-width="1.5">
-            <path d="M11 2C7.7 2 5 4.7 5 8c0 5 6 12 6 12s6-7 6-12c0-3.3-2.7-6-6-6z"/>
-            <circle cx="11" cy="8" r="2" fill="#1b66c9"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <h3>Jacksonville Beach</h3>
-          <p>SPOT GPS feed</p>
-        </div>
-        <span class="card-arrow">&rsaquo;</span>
-      </a>
-
-    </div>
-
-    <div id="customCards-spots" class="custom-cards-section"></div>
-    </div><!-- end tab-spots -->
 
     <!-- RESOURCES TAB -->
     <div class="tab-panel" id="tab-resources">
@@ -1945,9 +1942,13 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
-      if (btn) btn.classList.add('active');
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const matching = document.querySelector('.tab-btn[onclick*="\'' + tabId + '\'"]');
+        if (matching) matching.classList.add('active');
+      }
       window.scrollTo(0, 0);
-      // Close mobile nav
       document.querySelector('.nav-links').classList.remove('open');
       if (tabId === 'training' && !_tcLoaded) { _tcLoaded = true; tcLoad(); }
     }
@@ -2755,7 +2756,7 @@
 
     function renderCustomCards() {
       // Clear all custom card containers
-      ['home', 'spots', 'resources'].forEach(tab => {
+      ['home', 'resources'].forEach(tab => {
         const container = document.getElementById('customCards-' + tab);
         if (container) container.innerHTML = '';
       });
